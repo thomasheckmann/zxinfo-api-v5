@@ -1,0 +1,22 @@
+{
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "completion",
+        "analyzer": "standard",
+        "contexts": [
+          {
+            "name": "genre",
+            "type": "category"
+          }
+        ]
+      },
+      "id": {
+        "type": "text"
+      },
+      "fulltitle": {
+        "type": "text"
+      }
+    }
+  }
+}

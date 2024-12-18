@@ -6,13 +6,12 @@ const port = process.env.PORT || 3000;
 
 // Import the router
 const routes = require("./v5/routes");
-const appConfig = require("./config.json");
+const appConfig = require("./v5/config.json");
 
 if (process.env.NODE_ENV === undefined) {
   console.log("NODE_ENV not defined, must be 'development' or 'production'");
   console.log("assuming 'development'");
   process.env['NODE_ENV'] = 'development';
-
 }
 
 console.log("# APP START ###################################################");
@@ -25,7 +24,7 @@ console.log("###############################################################");
 console.log("#");
 
 // Use the router for all paths starting with '/'
-app.use("/v4", routes);
+app.use("/v5", routes);
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

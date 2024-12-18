@@ -5,21 +5,14 @@
 "use strict";
 
 const moduleId = "typeahead";
-const debug = require("debug")(`zxinfo-api-v4:${moduleId}`);
+const debug = require("debug")(`zxinfo-api-v5:${moduleId}`);
 
 const express = require("express");
 const router = express.Router();
 
-const config = require("../config.json")[process.env.NODE_ENV || "development"];
+const { elasticClient, config, isDevelopment } = require("../common/elastic");
 
-const elasticsearch = require("@elastic/elasticsearch");
-const elasticClient = new elasticsearch.Client({
-  node: config.es_host,
-  apiVersion: config.es_apiVersion,
-  log: config.es_log,
-});
-
-var getSuggestions = function (context, query) {
+var getTypeaheadSuggestions = function (context, query) {
   const expandedContext =
     context === "ALL" ? ["SOFTWARE", "HARDWARE", "BOOK", "MAGZINE", "ENTITY", "GROUP", "LICENSE"] : context;
   return elasticClient.search({
@@ -62,9 +55,7 @@ var prepareSuggestionsResponse = function (result) {
 router.use(function (req, res, next) {
   debug(`TYPEAHEAD: ${req.path}`);
   debug(`user-agent: ${req.headers["user-agent"]}`);
-  // res.header("Access-Control-Allow-Origin", "*");
-  // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  // do logging
+
   next(); // make sure we go to the next routes and don't stop here
 });
 
@@ -72,12 +63,15 @@ router.use(function (req, res, next) {
 router.get("/typeahead/:context/:query", function (req, res, next) {
   debug("==> /:context = " + req.params.context);
   debug("==> /:query = " + req.params.query);
-  var suggestions = null;
-  getSuggestions(req.params.context, req.params.query).then(function (result) {
-    debug(`########### RESPONSE from getSuggestions(${req.params.query})`);
+  getTypeaheadSuggestions(req.params.context, req.params.query).then(function (result) {
+    debug(`########### RESPONSE from getTypeaheadSuggestions(${req.params.query})`);
     debug(result);
     debug(`#############################################################`);
-    console.log(JSON.stringify(result, null, 2));
+
+    if (isDevelopment) {
+      console.log(JSON.stringify(result, null, 2));
+    }
+
     res.send(prepareSuggestionsResponse(result));
   });
 });
