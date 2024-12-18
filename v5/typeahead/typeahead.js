@@ -12,9 +12,30 @@ const router = express.Router();
 
 const { elasticClient, config, isDevelopment } = require("../common/elastic");
 
+/**
+ * Returns a list of suggestions for :context and :query
+ * 
+ * context = ALL => [array with all]
+ * 
+ * OK:
+ * curl "http://localhost:3000/v5//typeahead/ALL/zx81" | jq .
+ * 
+ * NOTHING FOUND:
+ * curl -s -D - "http://localhost:3000/v5//typeahead/LICENSE/kaffe"
+ * 
+ * WRONG INPUT:
+ * curl -s -D - "http://localhost:3000/v5/typeahead/X/zx81"
+ * 
+ * RETURNS:
+ * 200: OK
+ * 422: Invalid Input (context is invalid)
+ * 500: Server error
+ */
+const validContext = ["SOFTWARE", "HARDWARE", "BOOK", "MAGZINE", "ENTITY", "GROUP", "LICENSE"];
+
 var getTypeaheadSuggestions = function (context, query) {
   const expandedContext =
-    context === "ALL" ? ["SOFTWARE", "HARDWARE", "BOOK", "MAGZINE", "ENTITY", "GROUP", "LICENSE"] : context;
+    context === "ALL" ? validContext : context;
   return elasticClient.search({
     index: config.index_search,
     body: {
@@ -63,6 +84,13 @@ router.use(function (req, res, next) {
 router.get("/typeahead/:context/:query", function (req, res, next) {
   debug("==> /:context = " + req.params.context);
   debug("==> /:query = " + req.params.query);
+
+  // check input
+  if(!["ALL", ...validContext].includes(req.params.context.trim())) {
+    debug(`INVALID context found: ${req.params.context.trim()}`);
+    res.status(422).end();
+    return;
+  }
   getTypeaheadSuggestions(req.params.context, req.params.query).then(function (result) {
     debug(`########### RESPONSE from getTypeaheadSuggestions(${req.params.query})`);
     debug(result);
@@ -72,6 +100,7 @@ router.get("/typeahead/:context/:query", function (req, res, next) {
       console.log(JSON.stringify(result, null, 2));
     }
 
+    res.header("X-Total-Count", result.hits.total.value);
     res.send(prepareSuggestionsResponse(result));
   });
 });

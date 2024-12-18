@@ -22,7 +22,7 @@ router.use(function (req, res, next) {
 });
 
 router.get("/typeahead/:context/:query", typeahead);
-router.get("/entries/:context/::entryid", entries);
+router.get("/entries/*", entries);
 
 router.get("*", (req, res) => {
   debug("[CATCH ALL]");
