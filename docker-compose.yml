@@ -1,7 +1,8 @@
 version: "3"
 
 services:
-  zxinfo-es:
-    image: "blacktop/elasticsearch:8.1"
+  zxinfo-es-v8:
+    build:
+      context: ./elastic-8.17.0-alpine/
     ports:
       - "9200:9200"

@@ -15,7 +15,25 @@ docker build -t zxinfo/es:8.17.0 .
 docker run -p 9200:9200 zxinfo/es:8.17.0
 ```
 
+OR use docker compose
+```
+docker compose up -d
+```
+
+## Create search-index
+```
+cd search-index
+
+cd mappings && ./create_index.sh
+
+node index.js
+```
+
+## Import zxinfo
+cd es-import && ./import_zxinfo.sh
+
+## RUN API for development
 ```
 nvm use v20.16.0
-DEBUG=zxinfo* node app.js
+DEBUG=zxinfo-api* node node_modules/nodemon/bin/nodemon.js
 ```

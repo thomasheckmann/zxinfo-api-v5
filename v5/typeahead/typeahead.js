@@ -1,5 +1,5 @@
 /**
- * ZXINFO API v4 typeahead
+ * ZXINFO API v5 typeahead
  *
  */
 "use strict";
@@ -9,6 +9,7 @@ const debug = require("debug")(`zxinfo-api-v5:${moduleId}`);
 
 const express = require("express");
 const router = express.Router();
+const helpers = require("../common/helpersRequest");
 
 const { elasticClient, config, isDevelopment } = require("../common/elastic");
 
@@ -77,7 +78,7 @@ router.use(function (req, res, next) {
   debug(`TYPEAHEAD: ${req.path}`);
   debug(`user-agent: ${req.headers["user-agent"]}`);
 
-  next(); // make sure we go to the next routes and don't stop here
+  helpers.defaultRouter(moduleId, debug, req, res, next);
 });
 
 /* GET title suggestions for completion (all) */
@@ -86,7 +87,7 @@ router.get("/typeahead/:context/:query", function (req, res, next) {
   debug("==> /:query = " + req.params.query);
 
   // check input
-  if(!["ALL", ...validContext].includes(req.params.context.trim())) {
+  if (!["ALL", ...validContext].includes(req.params.context.trim())) {
     debug(`INVALID context found: ${req.params.context.trim()}`);
     res.status(422).end();
     return;

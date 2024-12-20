@@ -2,7 +2,7 @@
 
 const moduleId = "queryTerms";
 
-var debug = require("debug")(`zxinfo-api-v4:${moduleId}`);
+var debug = require("debug")(`zxinfo-api-v5:${moduleId}`);
 
 function queryTermDefault(searchTerm, filterObject) {
     return {

@@ -1,8 +1,8 @@
 "use strict";
 
 var mariadb_username = "root";
-var mariadb_password = "zxdb1234";
-var mariadb_dbname = "zxdb";
+var mariadb_password = "zxdb";
+var mariadb_dbname = "zxdb-1.0.201";
 
 var mysql = require("mysql");
 

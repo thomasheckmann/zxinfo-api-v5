@@ -1,7 +1,7 @@
 "use strict";
 
 const moduleId = "helperSearch";
-const debug = require("debug")(`zxinfo-api-v4:${moduleId}`);
+const debug = require("debug")(`zxinfo-api-v5:${moduleId}`);
 const tools = require("../common/utils");
 
 const { elasticClient, config, isDevelopment } = require("../common/elastic");
@@ -11,10 +11,12 @@ function searchEntries(q, agg, page_size, offset, sortObject, outputmode, explai
     debug(`\tsize: ${page_size}`);
     debug(`\toffset: ${offset}`);
     debug(`\tsort object: ${sortObject}`);
+    debug(`\outputmode: ${outputmode}`);
+    debug(`\output: ${output}`);
 
     const fromOffset = page_size * offset;
     return elasticClient.search({
-        _source: tools.es_source_list(outputmode),
+        _source_includes: tools.es_source_list(outputmode),
         _source_excludes: "titlesuggest, metadata_author,authorsuggest",
         index: config.index_entries,
         body: {

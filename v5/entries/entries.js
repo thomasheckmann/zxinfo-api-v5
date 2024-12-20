@@ -7,6 +7,7 @@ const router = express.Router();
 const tools = require("../common/utils");
 const queryHelper = require("../common/queryTerms");
 const search = require("../common/helpersSearch");
+const helpers = require("../common/helpersRequest");
 
 const { elasticClient, config, isDevelopment } = require("../common/elastic");
 
@@ -14,14 +15,14 @@ router.use(function (req, res, next) {
     debug(`ENTRIES: ${req.path}`);
     debug(`user-agent: ${req.headers["user-agent"]}`);
 
-    next(); // make sure we go to the next routes and don't stop here
+    helpers.defaultRouter(moduleId, debug, req, res, next);
 });
 
 /**
- * Return game with :gameid
+ * Return entry with :entryid
  * 
  * OK:
- * curl "http://localhost:3000/v5/entries/002259" | jq .
+ * curl "http://localhost:3000/v5/entries/0002259" | jq .
  * 
  * NOT OK: (invalid ID)
  * curl -s -D - "http://localhost:3000/v5/entries/002259x"
@@ -39,7 +40,7 @@ var getEntryById = function (entryid, outputmode) {
     debug(`getEntryById() : ${entryid}, outputmode: ${outputmode}`);
 
     return elasticClient.get({
-        _source: tools.es_source_item(outputmode),
+        _source_includes: tools.es_source_item(outputmode),
         _source_excludes: ["titlesuggest", "publishersuggest", "authorsuggest", "metadata_author", "metadata_publisher"],
         index: config.index_entries,
         id: entryid,
@@ -155,9 +156,35 @@ router.get("/entries/byletter/:letter", function (req, res, next) {
     search.searchEntries(q, aggregationQuery, req.query.size, req.query.offset, sortObject, req.query.mode, req.query.explain, req.query.output, res);
 });
 
+/**
+ * Returns list of entries similar to :entryid
+ * 
+ * OK:
+ * curl "http://localhost:3000/v5/entries/morelikethis/0002259" | jq .
+ * 
+ * NOT OK: (invalid ID)
+ * curl -s -D - "http://localhost:3000/v5/entries/morelikethis/002259x"
+ * 
+ * NOT FOUND - 0 entries
+ * curl "http://localhost:3000/v5/entries/morelikethis/1231231"
+ * 
+ * RETURNS:
+ * 200: OK
+ */
+
 router.get("/entries/morelikethis/:entryid", function (req, res, next) {
     debug(`==> /entries/morelikethis/ [${req.params.entryid}]`);
 
+    // check input
+    const isNumeric = (string) => /^[+-]?\d+(\.\d+)?$/.test(string);
+
+    if (!isNumeric(req.params.entryid)) {
+        debug(`INVALID entryid, not a number: ${req.params.entryid.trim()}`);
+        res.status(422).end();
+        return;
+    }
+
+    req.query = tools.setDefaultValuesModeSizeOffsetSort(req.query);
     const sortObject = tools.getSortObject(req.query.sort);
     const filterQuery = queryHelper.createFilterQuery(req);
 
@@ -169,7 +196,7 @@ router.get("/entries/morelikethis/:entryid", function (req, res, next) {
                 fields: ["machineType", "genreType", "genreSubType", "contentType"],
                 like: [
                     {
-                        _index: "zxinfo_games",
+                        _index: config.index_entries,
                         _id: id,
                     },
                 ],
@@ -187,9 +214,23 @@ router.get("/entries/morelikethis/:entryid", function (req, res, next) {
     }
 });
 
+/**
+ * Returns list of entries by :author
+ * 
+ * OK:
+ * curl "http://localhost:3000/v5/entries/byauthor/ritman" | jq .
+ * 
+ * NOT FOUND - 0 entries
+ * curl -s -D - "http://localhost:3000/v5/entries/byauthor/abcdefghij"
+ * 
+ * RETURNS:
+ * 200: OK
+ */
+
 router.get("/entries/byauthor/:name", function (req, res, next) {
     debug(`==> /entries/byauthor/ [${req.params.name}]`);
 
+    req.query = tools.setDefaultValuesModeSizeOffsetSort(req.query);
     const sortObject = tools.getSortObject(req.query.sort);
     const filterQuery = queryHelper.createFilterQuery(req);
 
@@ -248,14 +289,23 @@ router.get("/entries/byauthor/:name", function (req, res, next) {
     search.searchEntries(query, aggregationQuery, req.query.size, req.query.offset, sortObject, req.query.mode, req.query.explain, req.query.output, res);
 });
 
-/************************************************
- *
- * requests served by this endpoint
- *
- ************************************************/
+/**
+ * Returns list of entries by :author
+ * 
+ * OK:
+ * curl "http://localhost:3000/v5/entries/bypublisher/ocean" | jq .
+ * 
+ * NOT FOUND - 0 entries
+ * curl -s -D - "http://localhost:3000/v5/entries/bypublisher/abcdefghij"
+ * 
+ * RETURNS:
+ * 200: OK
+ */
+
 router.get("/entries/bypublisher/:name", function (req, res, next) {
     debug(`==> /entries/bypublisher/ [${req.params.name}]`);
 
+    req.query = tools.setDefaultValuesModeSizeOffsetSort(req.query);
     const sortObject = tools.getSortObject(req.query.sort);
     const filterQuery = queryHelper.createFilterQuery(req);
 
@@ -319,6 +369,21 @@ router.get("/entries/bypublisher/:name", function (req, res, next) {
     search.searchEntries(query, aggregationQuery, req.query.size, req.query.offset, sortObject, req.query.mode, req.query.explain, req.query.output, res);
 });
 
+/**
+ * Returns list of random entries X
+ * 
+ * OK:
+ * curl "http://localhost:3000/v5/entries/random/10" | jq .
+ * 
+ * NOT OK: (invalid ID)
+ * curl -s -D - "http://localhost:3000/v5/entries/morelikethis/002259x"
+ * 
+ * NOT FOUND - 0 entries
+ * curl "http://localhost:3000/v5/entries/morelikethis/1231231"
+ * 
+ * RETURNS:
+ * 200: OK
+ */
 function getRandomX(total, outputmode) {
     debug("getRandomX()");
 
@@ -326,8 +391,8 @@ function getRandomX(total, outputmode) {
         outputmode = "tiny";
     }
     return elasticClient.search({
-        _source: tools.es_source_item(outputmode),
-        _sourceExcludes: ["titlesuggest", "publishersuggest", "authorsuggest", "metadata_author", "metadata_publisher"],
+        _source_includes: tools.es_source_item(outputmode),
+        _source_excludes: ["titlesuggest", "publishersuggest", "authorsuggest", "metadata_author", "metadata_publisher"],
         body:
         //-- BODY
         {
@@ -408,6 +473,15 @@ function getRandomX(total, outputmode) {
 router.get("/entries/random/:total", function (req, res, next) {
     debug("==> /entries/random/:total");
     debug(`total: ${req.params.total}, mode: ${req.query.mode}`);
+
+    // check input
+    const isNumeric = (string) => /^[+-]?\d+(\.\d+)?$/.test(string);
+
+    if (!isNumeric(req.params.total)) {
+        debug(`INVALID total, not a number: ${req.params.total.trim()}`);
+        res.status(422).end();
+        return;
+    }
 
     getRandomX(req.params.total, req.query.mode).then(function (result) {
         debug(`########### RESPONSE from getRandomX(${req.params.total}, mode: ${req.query.mode})`);
