@@ -23,9 +23,11 @@ COPY es-import/*.txt /es-import/
 COPY es-import/package.json /es-import/
 COPY es-import/import_zxinfo.sh /es-import/
 COPY es-import/import_magazines.sh /es-import/
+COPY es-import/import_search.sh /es-import/
 WORKDIR /es-import
 RUN sed -i 's/localhost/zxinfo-es-v8/g' /es-import/import_zxinfo.sh
 RUN sed -i 's/localhost/zxinfo-es-v8/g' /es-import/import_magazines.sh
+RUN sed -i 's/localhost/zxinfo-es-v8/g' /es-import/import_search.sh
 RUN npm install
 
 # get ready to launch API
