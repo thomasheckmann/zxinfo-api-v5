@@ -15,6 +15,6 @@ services:
       context: ./
     restart: on-failure
     ports:
-      - "8200:3000"
+      - "8400:3000"
     links:
       - zxinfo-es-v8
