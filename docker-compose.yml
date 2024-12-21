@@ -5,4 +5,16 @@ services:
     build:
       context: ./elastic-8.17.0-alpine/
     ports:
-      - "9200:9200"
+      - "9400:9200"
+      - "9500:9300"
+
+  zxinfo-api-v5:
+    environment:
+      - NODE_ENV=production
+    build:
+      context: ./
+    restart: on-failure
+    ports:
+      - "8200:3000"
+    links:
+      - zxinfo-es-v8

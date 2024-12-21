@@ -8,7 +8,7 @@
       "index_entries": "zxinfo"
     },
     "production": {
-      "es_host": "http://localhost:9200",
+      "es_host": "http://zxinfo-es-v8:9200",
       "es_apiVersion": "8.17",
       "es_log": "error",
       "index_magazines": "zxinfo-magazines",

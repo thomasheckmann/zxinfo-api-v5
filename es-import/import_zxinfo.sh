@@ -17,15 +17,17 @@ echo 'Index_alias       : ' ${WRITE_ALIAS}
 
 ## ZXINFO
 echo '-- create ' $WRITE_INDEX
+echo '-- importing analyzers from [zxinfo_games.analyzers.txt]'
 $DUMP_CMD \
   --input=zxinfo_games.analyzers.txt \
-  --output=http://localhost:9200/${WRITE_INDEX} \
+  --output=http://${ES_HOST}:${ES_PORT}/${WRITE_INDEX} \
   --type=analyzer \
   --headers='{"Content-Type": "application/json"}'
 
+echo '-- importing mappings from [zxinfo_games.mappings.txt]'
 $DUMP_CMD \
   --input=zxinfo_games.mappings.txt \
-  --output=http://localhost:9200/${WRITE_INDEX} \
+  --output=http://${ES_HOST}:${ES_PORT}/${WRITE_INDEX} \
   --type=mapping \
   --headers='{"Content-Type": "application/json"}'
 
@@ -46,9 +48,10 @@ curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_al
 }'; echo ""
 
 echo '-- importing data into ' $WRITE_ALIAS
+echo '-- importing index from [zxinfo_games.index.txt]'
 $DUMP_CMD \
   --input=zxinfo_games.index.txt \
-  --output=http://localhost:9200/${WRITE_ALIAS} \
+  --output=http://${ES_HOST}:${ES_PORT}/${WRITE_ALIAS} \
   --type=data \
   --headers='{"Content-Type": "application/json"}'
 
@@ -72,8 +75,8 @@ curl -H'Content-Type: application/json' -XPOST "http://${ES_HOST}:${ES_PORT}/_al
     ]
 }'
 
-# curl http://localhost:9200/_cat/indices?v
-# curl http://localhost:9200/_cat/aliases?v
-# curl http://localhost:9200/zxinfo_games/_doc/0002259
+# curl http://${ES_HOST}:${ES_PORT}/_cat/indices?v
+# curl http://${ES_HOST}:${ES_PORT}/_cat/aliases?v
+# curl http://${ES_HOST}:${ES_PORT}/zxinfo_games/_doc/0002259
 echo ""
-echo "test: curl http://localhost:9200/zxinfo_games/_doc/0002259 | jq"
+echo "test: curl http://${ES_HOST}:${ES_PORT}/zxinfo_games/_doc/0002259 | jq"
