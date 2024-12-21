@@ -10,6 +10,7 @@ const metadata = require("./metadata/metadata");
 const filecheck = require("./filecheck/filecheck");
 const suggest = require("./suggest/suggest");
 const search = require("./search/search");
+const magazines = require("./magazines/magazines");
 
 /************************************************
  *
@@ -31,6 +32,7 @@ router.get("/metadata", metadata);
 router.get("/filecheck/*", filecheck);
 router.get("/suggest/*", suggest);
 router.get("/search/*", search);
+router.get("/magazines/*", magazines);
 
 router.get("*", (req, res) => {
   debug("[CATCH ALL]");
