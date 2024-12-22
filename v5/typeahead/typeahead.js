@@ -78,9 +78,6 @@ router.use(function (req, res, next) {
   debug(`TYPEAHEAD: ${req.path}`);
   debug(`user-agent: ${req.headers["user-agent"]}`);
 
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-
   helpers.defaultRouter(moduleId, debug, req, res, next);
 });
 
