@@ -16,6 +16,9 @@
       },
       "fulltitle": {
         "type": "text"
+      },
+      "entry_seo": {
+        "type": "text"
       }
     }
   }

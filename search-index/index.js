@@ -281,16 +281,29 @@ ORDER BY
   g.name, 
   t.text`;
 
-const { Client } = require("@elastic/elasticsearch");
+const { Client, ClientOptions } = require("@elastic/elasticsearch");
+const {Transport} = require('@elastic/transport')
+let baseUrl = "http://internal.zxinfo.dk"
+let path = "/e817"
 
+// then create a class, that extends Transport class to modify the path
+class MTransport extends Transport {
+  request(params, options, callback) {
+      params.path = path + params.path // <- append the path right here
+      return super.request(params, options, callback)
+  }
+}
+
+// and finally put the extended class on the options.
 const client = new Client({
-  node: "http://localhost:9200",
+  node: baseUrl,
   log: "debug",
+  Transport: MTransport,
 });
 
 var db = require("./dbConfig");
 
-async function index(id, title, comment, context) {
+async function index(id, title, entry_seo, comment, context) {
   var zerofilled = ("0000000" + id).slice(-7);
 
   /**
@@ -310,18 +323,18 @@ async function index(id, title, comment, context) {
    */
   const words = title.split(/[^A-Za-z0-9]/).filter((str) => /\w+/.test(str)); // filter out non words
 
-/**
-  var pairs = [];
-  for (let index = 0; index < words.length - 1; index++) {
-    const e1 = words[index];
-    const e2 = words[index + 1];
-    const e = `${e1} ${e2}`;
-    pairs.push(e);
-  }
- */
+  /**
+    var pairs = [];
+    for (let index = 0; index < words.length - 1; index++) {
+      const e1 = words[index];
+      const e2 = words[index + 1];
+      const e = `${e1} ${e2}`;
+      pairs.push(e);
+    }
+   */
 
   var pairs = [];
-  for (let index = 1; index < words.length -1; index++) {
+  for (let index = 1; index < words.length - 1; index++) {
     var items = "";
     for (let index2 = index; index2 < words.length; index2++) {
       items = items + " " + words[index2];
@@ -329,7 +342,7 @@ async function index(id, title, comment, context) {
     pairs.push(items.trim());
   }
 
-  for (let index = words.length -1; index > 1; index--) {
+  for (let index = words.length - 1; index > 1; index--) {
     var items = "";
     for (let index2 = 0; index2 < index; index2++) {
       items = items + " " + words[index2];
@@ -338,9 +351,9 @@ async function index(id, title, comment, context) {
   }
 
   // const inputs = ["input": {title}, ...pairs, ...words];
-  var inputs = [{ input: title, contexts: {genre: context}, weight: 20 }];
-  inputs.push({ input: pairs, contexts: {genre: context}, weight: 15 });
-  inputs.push({ input: words, contexts: {genre: context}, weight: 5 });
+  var inputs = [{ input: title, contexts: { genre: context }, weight: 20 }];
+  inputs.push({ input: pairs, contexts: { genre: context }, weight: 15 });
+  inputs.push({ input: words, contexts: { genre: context }, weight: 5 });
 
   /**
   console.log(`t: ${title}`);
@@ -355,6 +368,7 @@ async function index(id, title, comment, context) {
       title: inputs,
       id: zerofilled,
       fulltitle: title,
+      entry_seo: entry_seo,
       comment: comment,
       type: context,
     },
@@ -373,9 +387,11 @@ async function getTitles(query, context, connection) {
     for (; i < results.length; i++) {
       console.log(`${context} - [${results[i].id}] - ${results[i].full_title}`);
       var comment = "";
+      var entry_seo = "";
       const year = results[i].release_year ? `(${results[i].release_year})` : "";
       switch (context) {
         case "SOFTWARE":
+          entry_seo = results[i].entry_seo;
           if (results[i].pub_names) {
             var newStr = results[i].pub_names.replace(/<\/?[^>]+(>|$)/g, "");
             comment = `(${newStr})${year}[${results[i].machine_type_text}]`;
@@ -385,12 +401,17 @@ async function getTitles(query, context, connection) {
           break;
         case "HARDWARE":
         case "BOOK":
+          entry_seo = results[i].entry_seo;
           if (results[i].pub_names) {
             var newStr = results[i].pub_names.replace(/<\/?[^>]+(>|$)/g, "");
             comment = `(${newStr})${year}`;
           } else {
             comment = `${year}`;
           }
+          break;
+        case "MAGAZINE":
+          entry_seo = results[i].mag_seo;
+          comment = "";
           break;
         case "ENTITY":
           const entity_type = results[i].entity_type ? `(${results[i].entity_type})` : "";
@@ -405,7 +426,7 @@ async function getTitles(query, context, connection) {
         default:
           break;
       }
-      await index(results[i].id, results[i].full_title, comment, context);
+      await index(results[i].id, results[i].full_title, entry_seo, comment, context);
     }
     done = true;
   });

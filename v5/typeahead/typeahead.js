@@ -32,7 +32,7 @@ const { elasticClient, config, isDevelopment } = require("../common/elastic");
  * 422: Invalid Input (context is invalid)
  * 500: Server error
  */
-const validContext = ["SOFTWARE", "HARDWARE", "BOOK", "MAGZINE", "ENTITY", "GROUP", "LICENSE"];
+const validContext = ["SOFTWARE", "HARDWARE", "BOOK", "MAGAZINE", "ENTITY", "GROUP", "LICENSE"];
 
 var getTypeaheadSuggestions = function (context, query) {
   const expandedContext =
@@ -64,10 +64,11 @@ var prepareSuggestionsResponse = function (result) {
   // iterate result
   for (var i = 0; i < result.suggest.quick_suggest[0].options.length; i++) {
     var item = {
-      id: result.suggest.quick_suggest[0].options[i]._source.id,
-      name: result.suggest.quick_suggest[0].options[i]._source.fulltitle,
       comment: result.suggest.quick_suggest[0].options[i]._source.comment,
       type: result.suggest.quick_suggest[0].options[i]._source.type,
+      id: result.suggest.quick_suggest[0].options[i]._source.id,
+      name: result.suggest.quick_suggest[0].options[i]._source.fulltitle,
+      entry_seo: result.suggest.quick_suggest[0].options[i]._source.entry_seo,
     };
     suggestons.push(item);
   }
