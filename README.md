@@ -20,7 +20,48 @@ OR use docker compose
 docker compose up -d
 ```
 
-## Create search-index
+# Create search-index
+
+## UPDATE zxinfo-api-v5 
+Make sure you have latest version of ZXDB running on your local machine.
+
+```
+cd search-index/mappings
+ES_HOST=http://internal.zxinfo.dk/e817 ./create_index.sh
+
+# NOTE the new INDEX name - needed later
+# NEW INDEX             :  zxinfo-search-20250103-194951
+# creates new zxinfo-search-XXXXXX index
+# creates alias zxinfo-searcj-write for new index
+
+cd ..
+
+# specify which node version to use
+nvm use v20.16.0
+
+# ES_HOST=URL for elasticsearch, defaults to localhost:9200
+# ES_PATH=path, defaults to /
+# ZXDB=name of local ZXDB database, defaults to zxdb
+ES_HOST=http://internal.zxinfo.dk ES_PATH="/e817" ZXDB=zxdb-1.0.204 node index.js
+
+# list current index for 'zxinfo-search', note index name
+curl -X GET 'http://internal.zxinfo.dk/e817/_alias/zxinfo-search-write?pretty'
+=>
+{
+  "zxinfo-search-20250103-175249" : {
+    "aliases" : {
+      "zxinfo-search" : { }
+    }
+  }
+}
+
+# create alias zxinfo-search for new INDEX (NEW INDEX from above)
+curl -X PUT 'http://internal.zxinfo.dk/e817/zxinfo-search-20250103-194951/_alias/zxinfo-search?pretty"
+
+# remove zxinfo-search alias from existing index
+curl -X DELETE 'http://internal.zxinfo.dk/e817/zxinfo-search-20241221-232022/_alias/zxinfo-search?pretty'
+```
+
 ```
 cd search-index
 
