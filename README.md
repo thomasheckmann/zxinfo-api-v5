@@ -45,7 +45,7 @@ nvm use v20.16.0
 ES_HOST=http://internal.zxinfo.dk ES_PATH="/e817" ZXDB=zxdb-1.0.204 node index.js
 
 # list current index for 'zxinfo-search', note index name
-curl -X GET 'http://internal.zxinfo.dk/e817/_alias/zxinfo-search-write?pretty'
+curl -X GET 'http://internal.zxinfo.dk/e817/_alias/zxinfo-search?pretty'
 =>
 {
   "zxinfo-search-20250103-175249" : {
@@ -54,12 +54,12 @@ curl -X GET 'http://internal.zxinfo.dk/e817/_alias/zxinfo-search-write?pretty'
     }
   }
 }
+# remove zxinfo-search alias from existing index
+curl -X DELETE 'http://internal.zxinfo.dk/e817/zxinfo-search-20250103-175249/_alias/zxinfo-search?pretty'
 
 # create alias zxinfo-search for new INDEX (NEW INDEX from above)
-curl -X PUT 'http://internal.zxinfo.dk/e817/zxinfo-search-20250103-194951/_alias/zxinfo-search?pretty"
+curl -X PUT 'http://internal.zxinfo.dk/e817/zxinfo-search-20250103-194951/_alias/zxinfo-search?pretty'
 
-# remove zxinfo-search alias from existing index
-curl -X DELETE 'http://internal.zxinfo.dk/e817/zxinfo-search-20241221-232022/_alias/zxinfo-search?pretty'
 ```
 
 ```
