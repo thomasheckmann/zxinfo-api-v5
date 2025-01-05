@@ -2,7 +2,7 @@
 
 var mariadb_username = "root";
 var mariadb_password = "zxdb";
-var mariadb_dbname = "zxdb-1.0.201";
+var mariadb_dbname = process.env.ZXDB ? process.env.ZXDB: "zxdb";
 
 var mysql = require("mysql");
 

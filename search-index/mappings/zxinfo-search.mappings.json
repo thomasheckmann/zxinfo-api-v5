@@ -8,6 +8,14 @@
           {
             "name": "genre",
             "type": "category"
+          },
+          {
+            "name": "xrated",
+            "type": "category"
+          },
+          {
+            "name": "genre_xrated",
+            "type": "category"
           }
         ]
       },
@@ -19,6 +27,9 @@
       },
       "entry_seo": {
         "type": "text"
+      },
+      "xrated": {
+        "type": "boolean"
       }
     }
   }
