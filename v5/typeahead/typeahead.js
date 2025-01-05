@@ -34,9 +34,30 @@ const { elasticClient, config, isDevelopment } = require("../common/elastic");
  */
 const validContext = ["SOFTWARE", "HARDWARE", "BOOK", "MAGAZINE", "ENTITY", "GROUP", "LICENSE"];
 
-var getTypeaheadSuggestions = function (context, query) {
-  const expandedContext =
+var getTypeaheadSuggestions = function (context, query, xrt) {
+  let expandedContext =
     context === "ALL" ? validContext : context;
+
+  const include_xrated = (xrt === '1') ? true : false;
+
+  debug(`context ${context}`);
+  debug(`xrated: ${include_xrated} - from ${xrt}`);
+
+  let context_xrt = {}
+  if (!include_xrated) {
+    expandedContext = context === "ALL" ?  `ALL_false` : `${context}_false`;
+    context_xrt = {
+      genre_xrated: `${expandedContext}`,
+    }
+    debug(`expandedContext (HIDE xrated) ${expandedContext}`);
+  } else {
+    context === "ALL" ? validContext : context;
+    context_xrt = {
+      genre: expandedContext,
+    }
+    debug(`expandedContext (SHOW xrated) ${expandedContext}`);
+  }
+
   return elasticClient.search({
     index: config.index_search,
     body: {
@@ -47,9 +68,7 @@ var getTypeaheadSuggestions = function (context, query) {
             field: "title",
             size: 15,
             analyzer: "standard",
-            contexts: {
-              genre: expandedContext,
-            },
+            contexts: context_xrt,
           },
         },
       },
@@ -69,6 +88,7 @@ var prepareSuggestionsResponse = function (result) {
       id: result.suggest.quick_suggest[0].options[i]._source.id,
       name: result.suggest.quick_suggest[0].options[i]._source.fulltitle,
       entry_seo: result.suggest.quick_suggest[0].options[i]._source.entry_seo,
+      xrated: result.suggest.quick_suggest[0].options[i]._source.xrated,
     };
     suggestons.push(item);
   }
@@ -86,6 +106,7 @@ router.use(function (req, res, next) {
 router.get("/typeahead/:context/:query", function (req, res, next) {
   debug("==> /:context = " + req.params.context);
   debug("==> /:query = " + req.params.query);
+  debug("==> xrt = " + req.query.xrt);
 
   // check input
   if (!["ALL", ...validContext].includes(req.params.context.trim())) {
@@ -93,7 +114,7 @@ router.get("/typeahead/:context/:query", function (req, res, next) {
     res.status(422).end();
     return;
   }
-  getTypeaheadSuggestions(req.params.context, req.params.query).then(function (result) {
+  getTypeaheadSuggestions(req.params.context, req.params.query, req.query.xrt).then(function (result) {
     debug(`########### RESPONSE from getTypeaheadSuggestions(${req.params.query})`);
     debug(result);
     debug(`#############################################################`);

@@ -1,22 +1,13 @@
 /**
- * Proof of Concept - testing out, specific sorting on title only for ZXDB/ZXInfo
- *
- * - testing on Elasticsearch v8
- *
- * Using docker image based on alphine
- * https://github.com/blacktop/docker-elasticsearch-alpine
- *
- * docker run -d --name zxinfo-poc -p 9200:9200 -p 9300:9300 blacktop/elasticsearch:8.1
- *
- * quick:
- * s: software
- * h: hardware
- * b: book
- * m: magazine (list)
- * e: entity (list)
- * g: group (list)
- * l: license (list)
- * all: (list)
+ * zxinfo-search index for autocomplete - used by quick-search at SC
+ * 
+ * To update zxinfo-api-v5 in production
+ * 
+ * > cd search-index/mappings
+ * > ES_HOST=http://internal.zxinfo.dk/e817 ./create_index.sh
+ * > cd ..
+ * > nvm use v20.16.0
+ * > ES_HOST=http://internal.zxinfo.dk ES_PATH="/e817" ZXDB=zxdb-1.0.204 node index.js
  */
 
 "use strict";
@@ -35,7 +26,8 @@ const softwareSQL = `
     r.release_day, 
     e.availabletype_id, 
     m.text as machine_type_text, 
-    coalesce(z.orig_pubs, z.orig_comps) as pub_names 
+    coalesce(z.orig_pubs, z.orig_comps) as pub_names,
+    e.is_xrated as xrated 
   FROM 
     entries e 
     INNER JOIN sc_entries z ON e.id = z.id 
@@ -79,7 +71,6 @@ const softwareSQL = `
           tag_id = 1000
       )
     ) 
-    AND e.is_xrated = 0 
     AND e.id NOT IN (
       14579, 15100, 15101, 15102, 15103, 32305, 
       7376, 7716, 32241
@@ -106,7 +97,8 @@ SELECT
   r.release_day, 
   e.availabletype_id, 
   m.text as machine_type_text, 
-  coalesce(z.orig_pubs, z.orig_comps) as pub_names 
+  coalesce(z.orig_pubs, z.orig_comps) as pub_names,
+  e.is_xrated as xrated
 FROM 
   entries e 
   INNER JOIN sc_entries z ON e.id = z.id 
@@ -173,7 +165,8 @@ SELECT
   r.release_day, 
   e.availabletype_id, 
   m.text as machine_type_text, 
-  coalesce(z.orig_pubs, z.orig_comps) as pub_names 
+  coalesce(z.orig_pubs, z.orig_comps) as pub_names,
+  e.is_xrated as xrated
 FROM 
   entries e 
   INNER JOIN sc_entries z ON e.id = z.id 
@@ -282,15 +275,24 @@ ORDER BY
   t.text`;
 
 const { Client, ClientOptions } = require("@elastic/elasticsearch");
-const {Transport} = require('@elastic/transport')
-let baseUrl = "http://internal.zxinfo.dk"
-let path = "/e817"
+const { Transport } = require('@elastic/transport');
+let baseUrl = process.env.ES_HOST ? process.env.ES_HOST : "http://localhost:9200";
+let path = process.env.ES_PATH ? process.env.ES_PATH : "";
+let es_index = process.env.ES_INDEX ? process.env.ES_INDEX : "zxinfo-search-write";
+
+console.log(`PARAMETERS:`);
+console.log(`ES_HOST: ${baseUrl}`);
+console.log(`ES_PATH: ${path}`);
+console.log(`ES_URL: ${baseUrl}${path}`);
+console.log(`ES_INDEX: ${es_index}`);
+console.log(`ZXDB: ${process.env.ZXDB ? process.env.ZXDB: "zxdb"}`);
+
 
 // then create a class, that extends Transport class to modify the path
 class MTransport extends Transport {
   request(params, options, callback) {
-      params.path = path + params.path // <- append the path right here
-      return super.request(params, options, callback)
+    params.path = path + params.path // <- append the path right here
+    return super.request(params, options, callback)
   }
 }
 
@@ -303,7 +305,7 @@ const client = new Client({
 
 var db = require("./dbConfig");
 
-async function index(id, title, entry_seo, comment, context) {
+async function index(id, title, entry_seo, comment, context, xrt) {
   var zerofilled = ("0000000" + id).slice(-7);
 
   /**
@@ -351,9 +353,9 @@ async function index(id, title, entry_seo, comment, context) {
   }
 
   // const inputs = ["input": {title}, ...pairs, ...words];
-  var inputs = [{ input: title, contexts: { genre: context }, weight: 20 }];
-  inputs.push({ input: pairs, contexts: { genre: context }, weight: 15 });
-  inputs.push({ input: words, contexts: { genre: context }, weight: 5 });
+  var inputs = [{ input: title, contexts: { genre: context, xrated: xrt, genre_xrated: [`${context}_${xrt}`, `ALL_${xrt}`] }, weight: 20 }];
+  inputs.push({ input: pairs, contexts: { genre: context, xrated: xrt, genre_xrated: [`${context}_${xrt}`, `ALL_${xrt}`] }, weight: 15 });
+  inputs.push({ input: words, contexts: { genre: context, xrated: xrt, genre_xrated: [`${context}_${xrt}`, `ALL_${xrt}`] }, weight: 5 });
 
   /**
   console.log(`t: ${title}`);
@@ -363,7 +365,7 @@ async function index(id, title, entry_seo, comment, context) {
  */
 
   await client.index({
-    index: "zxinfo-search",
+    index: es_index,
     document: {
       title: inputs,
       id: zerofilled,
@@ -371,6 +373,7 @@ async function index(id, title, entry_seo, comment, context) {
       entry_seo: entry_seo,
       comment: comment,
       type: context,
+      xrated: xrt,
     },
   });
 }
@@ -385,9 +388,10 @@ async function getTitles(query, context, connection) {
     }
     var i = 0;
     for (; i < results.length; i++) {
-      console.log(`${context} - [${results[i].id}] - ${results[i].full_title}`);
+      console.log(`${context} - [${results[i].id}] - ${results[i].full_title}(xrt: ${results[i].xrated})`);
       var comment = "";
       var entry_seo = "";
+      var xrt = false;
       const year = results[i].release_year ? `(${results[i].release_year})` : "";
       switch (context) {
         case "SOFTWARE":
@@ -397,6 +401,9 @@ async function getTitles(query, context, connection) {
             comment = `(${newStr})${year}[${results[i].machine_type_text}]`;
           } else {
             comment = `${year}[${results[i].machine_type_text}]`;
+          }
+          if (results[i].xrated === 1) {
+            xrt = true;
           }
           break;
         case "HARDWARE":
@@ -426,7 +433,7 @@ async function getTitles(query, context, connection) {
         default:
           break;
       }
-      await index(results[i].id, results[i].full_title, entry_seo, comment, context);
+      await index(results[i].id, results[i].full_title, entry_seo, comment, context, xrt);
     }
     done = true;
   });
