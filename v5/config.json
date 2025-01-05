@@ -1,18 +1,20 @@
 {
-    "development": {
-      "es_host": "http://localhost:9400",
-      "es_apiVersion": "8.17",
-      "es_log": "debug",
-      "index_magazines": "zxinfo-magazines",
-      "index_search": "zxinfo-search",
-      "index_entries": "zxinfo"
-    },
-    "production": {
-      "es_host": "http://zxinfo-es-v8:9200",
-      "es_apiVersion": "8.17",
-      "es_log": "error",
-      "index_magazines": "zxinfo-magazines",
-      "index_search": "zxinfo-search",
-      "index_entries": "zxinfo"
-    }
+  "development": {
+    "es_host": "http://localhost:9400",
+    "es_path": "",
+    "es_apiVersion": "8.17",
+    "es_log": "debug",
+    "index_magazines": "zxinfo-magazines",
+    "index_search": "zxinfo-search",
+    "index_entries": "zxinfo"
+  },
+  "production": {
+    "es_host": "http://zxinfo-es-v8:9200",
+    "es_path": "",
+    "es_apiVersion": "8.17",
+    "es_log": "error",
+    "index_magazines": "zxinfo-magazines",
+    "index_search": "zxinfo-search",
+    "index_entries": "zxinfo"
+  }
 }
