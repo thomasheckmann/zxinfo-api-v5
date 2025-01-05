@@ -17,7 +17,6 @@
             "name": "genre_xrated",
             "type": "category"
           }
-
         ]
       },
       "id": {
@@ -31,7 +30,7 @@
       },
       "xrated": {
         "type": "boolean"
-      },
+      }
     }
   }
 }
