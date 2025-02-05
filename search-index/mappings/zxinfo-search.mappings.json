@@ -4,6 +4,7 @@
       "title": {
         "type": "completion",
         "analyzer": "standard",
+	      "preserve_separators": false,
         "contexts": [
           {
             "name": "genre",
