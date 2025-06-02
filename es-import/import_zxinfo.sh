@@ -1,6 +1,6 @@
 #!/bin/bash
 ES_HOST=localhost
-ES_PORT=9200
+ES_PORT=9400
 
 INDEX_NAME=zxinfo
 

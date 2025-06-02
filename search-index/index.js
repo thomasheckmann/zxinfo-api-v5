@@ -1,8 +1,8 @@
 /**
  * zxinfo-search index for autocomplete - used by quick-search at SC
- * 
+ *
  * To update zxinfo-api-v5 in production
- * 
+ *
  * > cd search-index/mappings
  * > ES_HOST=http://internal.zxinfo.dk/e817 ./create_index.sh
  * > cd ..
@@ -16,6 +16,7 @@ const softwareSQL = `
   SELECT 
     z.full_title, 
     z.entry_seo, 
+    (select GROUP_CONCAT(DISTINCT title ORDER by title SEPARATOR ';;' ) as alias from aliases where entry_id = e.id) as aliases,
     g.text as genretype_text, 
     e.id, 
     q.date_year, 
@@ -87,6 +88,7 @@ const hardwareSQL = `
 SELECT 
   z.full_title, 
   z.entry_seo, 
+  (select GROUP_CONCAT(DISTINCT title ORDER by title SEPARATOR ';;' ) as alias from aliases where entry_id = e.id) as aliases,
   g.text as genretype_text, 
   e.id, 
   q.date_year, 
@@ -155,6 +157,7 @@ const booksSQL = `
 SELECT 
   z.full_title, 
   z.entry_seo, 
+  (select GROUP_CONCAT(DISTINCT title ORDER by title SEPARATOR ';;' ) as alias from aliases where entry_id = e.id) as aliases,
   g.text as genretype_text, 
   e.id, 
   q.date_year, 
@@ -275,7 +278,7 @@ ORDER BY
   t.text`;
 
 const { Client, ClientOptions } = require("@elastic/elasticsearch");
-const { Transport } = require('@elastic/transport');
+const { Transport } = require("@elastic/transport");
 let baseUrl = process.env.ES_HOST ? process.env.ES_HOST : "http://localhost:9200";
 let path = process.env.ES_PATH ? process.env.ES_PATH : "";
 let es_index = process.env.ES_INDEX ? process.env.ES_INDEX : "zxinfo-search-write";
@@ -285,14 +288,13 @@ console.log(`ES_HOST: ${baseUrl}`);
 console.log(`ES_PATH: ${path}`);
 console.log(`ES_URL: ${baseUrl}${path}`);
 console.log(`ES_INDEX: ${es_index}`);
-console.log(`ZXDB: ${process.env.ZXDB ? process.env.ZXDB: "zxdb"}`);
-
+console.log(`ZXDB: ${process.env.ZXDB ? process.env.ZXDB : "zxdb"}`);
 
 // then create a class, that extends Transport class to modify the path
 class MTransport extends Transport {
   request(params, options, callback) {
-    params.path = path + params.path // <- append the path right here
-    return super.request(params, options, callback)
+    params.path = path + params.path; // <- append the path right here
+    return super.request(params, options, callback);
   }
 }
 
@@ -353,9 +355,23 @@ async function index(id, title, entry_seo, comment, context, xrt) {
   }
 
   // const inputs = ["input": {title}, ...pairs, ...words];
-  var inputs = [{ input: title, contexts: { genre: context, xrated: xrt, genre_xrated: [`${context}_${xrt}`, `ALL_${xrt}`] }, weight: 20 }];
-  inputs.push({ input: pairs, contexts: { genre: context, xrated: xrt, genre_xrated: [`${context}_${xrt}`, `ALL_${xrt}`] }, weight: 15 });
-  inputs.push({ input: words, contexts: { genre: context, xrated: xrt, genre_xrated: [`${context}_${xrt}`, `ALL_${xrt}`] }, weight: 5 });
+  var inputs = [
+    {
+      input: title,
+      contexts: { genre: context, xrated: xrt, genre_xrated: [`${context}_${xrt}`, `ALL_${xrt}`] },
+      weight: 20,
+    },
+  ];
+  inputs.push({
+    input: pairs,
+    contexts: { genre: context, xrated: xrt, genre_xrated: [`${context}_${xrt}`, `ALL_${xrt}`] },
+    weight: 15,
+  });
+  inputs.push({
+    input: words,
+    contexts: { genre: context, xrated: xrt, genre_xrated: [`${context}_${xrt}`, `ALL_${xrt}`] },
+    weight: 5,
+  });
 
   /**
   console.log(`t: ${title}`);
@@ -433,7 +449,18 @@ async function getTitles(query, context, connection) {
         default:
           break;
       }
-      await index(results[i].id, results[i].full_title, entry_seo, comment, context, xrt);
+      await index(results[i].id, results[i].full_title.replace(/\[MOD\] /g, ""), entry_seo, comment, context, xrt);
+
+      // if entry got entries, add them as well
+      if (results[i].aliases) {
+        const aliases = results[i].aliases.split(";;");
+        for (let value of aliases) {
+          const aliastitle = `${value} (${results[i].full_title.replace(/\[MOD\] /g, "")})`;
+          console.log(`${context} - [${results[i].id}] - (alias)${aliastitle}(xrt: ${results[i].xrated})`);
+          await index(results[i].id, aliastitle, entry_seo, comment, context, xrt);
+        }
+      }
+
     }
     done = true;
   });

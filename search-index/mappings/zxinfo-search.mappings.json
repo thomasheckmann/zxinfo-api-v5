@@ -1,9 +1,19 @@
 {
+"settings": {
+    "analysis": {
+      "analyzer": {
+        "standard_asciifolding": {
+          "tokenizer": "standard",
+          "filter": [ "lowercase", "asciifolding" ]
+        }
+      }
+    }
+  },
   "mappings": {
     "properties": {
       "title": {
         "type": "completion",
-        "analyzer": "standard",
+        "analyzer": "standard_asciifolding",
 	      "preserve_separators": false,
         "contexts": [
           {
