@@ -1,0 +1,80 @@
+openapi: "3.0.4"
+info:
+  title: ZXInfo API
+  version: "5.0.0"
+  description: |
+    Welcome to the world's (probaly) greatest Sinclair API!.
+
+    This ZXDB based API is a tool to help developers everywhere create amazing and incredible web sites and apps using data from the 40-plus years area of Sinclair home computers (and clones).
+
+    **Ready** to get started?
+
+    This is the short version of what you need to do:
+    * Be a good API citizen, read and understand how to use the API
+    * **Identify yourself** using your own **User-Agent** string (and don't forget to tell us about it). Otherwise there is a risk that access will be treated as a crawler!
+    * Keep in touch: tell us about what you're building and talk to other developers
+    * Build cool stuff
+
+    The ZXInfo API is also the backend for the web site https://zxinfo.dk
+
+    Remember that the ZXInfo API suite and portal is an evolving project, developed by dedicated people in their spare time. To the extent that it is possible, we will try to limit any modifications which cause backwards incompatible changes to applications.
+
+    Most communication will occur on the community forum on https://spectrumcomputing.co.uk/forums/
+
+    Additional information can be found on the [Wiki](https://github.com/thomasheckmann/zxinfo-api-v3/wiki/ZXInfo-API-v3-documentation)
+
+    **KNOWN CLIENTS using ZXInfo API**
+
+    If you want to check out how the ZXInfo API is being used, please checkout the following:
+
+    * Web site https://zxinfo.dk - a modern full featured web site build using Vue.js and Vuetify.
+    * ZXInfo file browser [GitHub](https://github.com/thomasheckmann/zxinfo-file-browser) - kind of a "Picasa for ZX Spectrum emulator files".
+    * Microdrive Emulator [OqtaDrive](https://oqtadrive.org/01.overview/features/) - emulates a bank of 8 Microdrives for use with a Sinclair ZX Spectrum with Interface 1, or with a Sinclair QL.
+    * Virtual Filesystem [ZXDBFS](https://www.hermitretro.com/zxdbfs.html) - a filesystem-like environment enabling you to search and load games seamlessly over the Internet through a standard file interface.
+    * ZX Tape Player App [GitHub](https://github.com/semack/zx_tape_player) - Cross platform TZX/TAP player for iOS and Android
+    * ZX Spectrum Gamer [Google Play](https://play.google.com/store/apps/details?id=com.cooolapps.spectrumgamer) - an app that makes it easier to access Sinclair ZX Spectrum games information.
+    * [Virtual TR-DOS](https://vtrd.in/) - the largest archive of software (games, electronic press, system programs, pc tools) for the ZX Spectrum with TR-DOS.
+    * ZX Spectrum Frontend Meta Generator [GitHub](https://github.com/leemm/zxspectrum-meta-generator) - Create your metadata for various emulator frontends.
+    * Android ZX App[Google Play](https://play.google.com/store/apps/details?id=com.bricboys.zxapp) - ZX Spectrum stuff search engine
+    * Emulator [ZEsarUX](https://github.com/chernandezba/zesarux) - ZX Second-Emulator And Released for UniX.
+    * WoSC https://worldofspectrum.net - WoSC (WOS Classic) is the spiritual successor to the legendary World Of Spectrum site.
+    * SpeccyBot https://github.com/druellan/speccybot - an interactive chat bot for Telegram that allows searching online for Spectrum related information.
+    * ZXInfoTV [AppleTV](https://github.com/thomasheckmann/zxinfo-tv) - PoC for a video focused experiece for your AppleTV
+
+  contact:
+    name: ZXInfo API development
+    email: info@zxinfo.dk
+servers:
+  - url: https://api.zxinfo.dk/v5/
+tags:
+  - name: "zxinfo"
+    description: "(Almost) Everything about Sinclair-related material including software, hardware, books, magazines, etc."
+paths:
+  /filecheck/{hash}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Loookup game by file"
+      description: |
+        Lookup a game by md5 or sha512 hash of file. If found, returns id and title for found entry.
+
+        Use md5 <file> or sha512sum <file> to generate hash for file.
+
+      operationId: "getFileByHash"
+      parameters:
+        - name: hash
+          in: path
+          description: MD5 (length 32) or SHA512 (length 128) hash
+          schema:
+            type: string
+          required: true
+      responses:
+        # Response code
+        200:
+          description: OK
+          
+          
+          
+          
+          
+          
