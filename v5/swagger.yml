@@ -109,9 +109,24 @@ paths:
           description: OK
         404:
           description: Filehash NOT found
-          
-          
-          
-          
-          
-          
+  /filesearch/{text}:
+      tags:
+        - "zxinfo"
+      summary: "Perform search in known .txt and .pdf files"
+      description: |
+        Return search result for txt and pdf documents known to ZXDB.
+
+      operationId: "fileSearch"
+      parameters:
+        - name: text
+          in: path
+          description: what to search for
+          schema:
+            type: string
+          required: true
+      responses:
+        # Response code
+        200:
+          description: OK
+        404:
+          description: Nothing found
