@@ -1,6 +1,15 @@
 {
   "development": {
-    "es_host": "http://localhost:9200",
+    "es_host": "http://localhost:9400",
+    "es_path": "",
+    "es_apiVersion": "8.17",
+    "es_log": "debug",
+    "index_magazines": "zxinfo-magazines",
+    "index_search": "zxinfo-search",
+    "index_entries": "zxinfo"
+  },
+  "container": {
+    "es_host": "http://zxinfo-es:9200",
     "es_path": "",
     "es_apiVersion": "8.17",
     "es_log": "debug",
