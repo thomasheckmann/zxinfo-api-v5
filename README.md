@@ -26,7 +26,7 @@ docker compose up -d
 Make sure you have latest version of ZXDB running on your local machine - and a local instance of Elasticsearch, if creating index for local use.
 
 ```
-cd search-index/mappings
+cd ~/Public/HETZNER_SITES/NEW_ZXINFO/zxinfo-api-v5/search-index/mappings
 prod> ES_HOST=http://internal.zxinfo.dk/e ./create_index.sh
 local> ES_HOST=http://localhost:9400 ./create_index.sh
 
