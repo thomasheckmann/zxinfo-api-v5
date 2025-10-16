@@ -50,6 +50,41 @@ tags:
   - name: "zxinfo"
     description: "(Almost) Everything about Sinclair-related material including software, hardware, books, magazines, etc."
 paths:
+
+  /typeahead/{type}/{text}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Type ahead suggester"
+      description: |
+        Type ahead suggester to help facility search.
+      
+      operationId: "getTypeAheadSuggestion"
+      parameters:
+        - name: type
+          in: path
+          description: |
+            Type of content to search (Same as Quick Search types on SpectrumComputing).
+              * `SOFTWARE` - Search for software
+              * `HARDWARE` - Search for hardware
+              * `BOOK` - Search for books
+              * `MAGZINE` - Search for magazines
+              * `ENTITY` - Search for names
+              * `GROUP` - Search for groups
+              * `LICENSE` - Search for licenses
+          schema:
+            type: string
+            enum: [SOFTWARE, HARDWARE, BOOK, MAGAZINE, ENTITY, GROUP, LICENSE]
+          required: true
+        - name: text
+          in: path
+          description: Text to return suggestion for
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: OK
   /filecheck/{hash}:
     get:
       tags:
@@ -72,6 +107,8 @@ paths:
         # Response code
         200:
           description: OK
+        404:
+          description: Filehash NOT found
           
           
           
