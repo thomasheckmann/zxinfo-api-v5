@@ -110,6 +110,7 @@ paths:
         404:
           description: Filehash NOT found
   /filesearch/{text}:
+    get:
       tags:
         - "zxinfo"
       summary: "Perform search in known .txt and .pdf files"
