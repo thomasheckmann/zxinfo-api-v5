@@ -22,6 +22,14 @@ Ensure that the latest version of ZXDB is running on your local machine, along w
 A new suggester index has been created with the alias `zxinfo-search-write`.
 To switch to the updated index, assign the alias `zxinfo-search` to it and remove the alias from the previous index.
 
+# Rebuild ZXInfo API v5
+
+````bash
+> cd /home/docker/ZXINFO
+> UID_GID="$(id -u):$(id -g)" docker compose -p zxinfo up -d --no-deps --build zxinfo-api-v5
+````
+
+
 ````
 # list current index for 'zxinfo-search', note index name (or use elasicvue)
 curl -X GET 'http://internal.zxinfo.dk/e817/_alias/zxinfo-search?pretty'
@@ -48,3 +56,4 @@ cd mappings && ./create_index.sh
 
 node index.js
 ```
+
