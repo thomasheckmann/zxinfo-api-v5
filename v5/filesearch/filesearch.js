@@ -6,7 +6,7 @@ const router = express.Router();
 
 const { elasticClient, config, isDevelopment } = require("../common/elastic");
 
-var searchDoc = function (text) {
+var searchDoc = function (text, offset, size) {
     debug(`searchDoc() : ${text}`);
 
     return elasticClient.search({
@@ -16,8 +16,8 @@ var searchDoc = function (text) {
         },
         index: "zxdb_doc",
         body: {
-            size: 50,
-            from: 0,
+            size: size,
+            from: offset,
             query: {
                 match: {
                     content: text
@@ -58,7 +58,15 @@ router.get("/filesearch/:text", (req, res) => {
         return;
     }
 
-    searchDoc(req.params.text).then(
+    const pg = isNaN(req.query.offset) ? 0 : req.query.offset;
+    const size = isNaN(req.query.size) ? 30 : req.query.size;
+
+    const offset = pg * size;
+    
+    debug(`\toffset: ${offset}`);
+    debug(`\tsize: ${size}`);
+
+    searchDoc(req.params.text, offset, size).then(
         async function (result) {
             debug(`########### RESPONSE from filesearch(${req.params.text})`);
             debug(result);
@@ -74,7 +82,7 @@ router.get("/filesearch/:text", (req, res) => {
                 for (let i = 0; i < docsFound.length; i++) {
                     // console.log(`Lookup: ${docsFound[i]._source.file.filename}: ${docsFound[i]._source.file.checksum}`);
                     const entryObj = await lookupHash(docsFound[i]._source.file.checksum);
-                    if(!entryObj.hits.hits[0]) {
+                    if (!entryObj.hits.hits[0]) {
                         console.error(`[NOT FOUND] ${docsFound[i]._source.file.filename}\n${JSON.stringify(docsFound[i], null, 2)}`);
                     };
                     const sha512 = docsFound[i]._source.file.checksum;
