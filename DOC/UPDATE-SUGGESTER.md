@@ -19,7 +19,7 @@ Ensure that the latest version of ZXDB is running on your local machine, along w
 # ZXDB=name of local ZXDB database, defaults to zxdb
 > ES_HOST=http://internal.zxinfo.dk ES_PATH="/e" ZXDB=zxdb-1.0.212 node index.js | ES_HOST=http://localhost:9400 ES_PATH="" ZXDB=zxdb-1.0.212 node index.js
 ````
-A new suggester index has been created with the alias `zxinfo-search-write`.
+A new suggester index has been created with the alias `zxinfo-search-write`. Check with `elasitvue`.
 To switch to the updated index, assign the alias `zxinfo-search` to it and remove the alias from the previous index.
 
 # Rebuild ZXInfo API v5
@@ -56,4 +56,5 @@ cd mappings && ./create_index.sh
 
 node index.js
 ```
+
 
