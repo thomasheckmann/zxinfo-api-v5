@@ -1,6 +1,14 @@
 # UPDATE ZXInfo API v5 Suggester
-Ensure that the latest version of ZXDB is running on your local machine, along with a local instance of Elasticsearch if you’re creating the index for local use. Then, follow the instructions below to generate a new suggester index.
+Ensure that the latest version of [ZXDB is running on your local machine](https://github.com/spectrumcomputing-co-uk/spectrumcomputing/blob/main/DOC/UPDATE_ZXDB.md), along with a local instance of Elasticsearch if you’re creating the index for local use.
 
+````
+# PRODUCTION | LOCAL
+>cd ~/Public/HETZNER_SITES/NEW_ZXINFO/zxinfo-api-v5/search-index/mappings
+>./install-new-suggester.sh --target prod --version 1.0.231 | ./install-new-suggester.sh --target local --version 1.0.231
+````
+
+<details>
+<summary>Details for the update process:</summary>
 ````bash
 # PROD | LOCAL
 > cd ~/Public/HETZNER_SITES/NEW_ZXINFO/zxinfo-api-v5/search-index/mappings
@@ -56,5 +64,6 @@ cd mappings && ./create_index.sh
 
 node index.js
 ```
+</details>
 
 
