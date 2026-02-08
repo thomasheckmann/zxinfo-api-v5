@@ -9,6 +9,7 @@ Ensure that the latest version of [ZXDB is running on your local machine](https:
 
 <details>
 <summary>Details for the update process:</summary>
+
 ````bash
 # PROD | LOCAL
 > cd ~/Public/HETZNER_SITES/NEW_ZXINFO/zxinfo-api-v5/search-index/mappings
@@ -65,5 +66,6 @@ cd mappings && ./create_index.sh
 node index.js
 ```
 </details>
+
 
 
