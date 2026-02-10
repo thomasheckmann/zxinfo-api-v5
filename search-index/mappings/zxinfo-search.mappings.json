@@ -3,7 +3,7 @@
     "analysis": {
       "analyzer": {
         "standard_asciifolding": {
-          "tokenizer": "standard",
+          "tokenizer": "whitespace",
           "filter": [ "lowercase", "asciifolding" ]
         }
       }
