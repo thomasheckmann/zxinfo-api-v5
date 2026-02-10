@@ -1,5 +1,16 @@
 # UPDATE ZXInfo API v5 Suggester
-Ensure that the latest version of ZXDB is running on your local machine, along with a local instance of Elasticsearch if you’re creating the index for local use. Then, follow the instructions below to generate a new suggester index.
+Ensure that the latest version of [ZXDB is running on your local machine](https://github.com/spectrumcomputing-co-uk/spectrumcomputing/blob/main/DOC/UPDATE_ZXDB.md), along with a local instance of Elasticsearch if you’re creating the index for local use.
+
+Use `elasitvue` to check that the new index with alias `zxinfo-search` has been created correct.
+
+````
+# PRODUCTION | LOCAL
+>cd ~/Public/HETZNER_SITES/NEW_ZXINFO/zxinfo-api-v5/search-index/mappings
+>./install-new-suggester.sh --target prod --version 1.0.231 | ./install-new-suggester.sh --target local --version 1.0.231
+````
+
+<details>
+<summary>Details for the update process:</summary>
 
 ````bash
 # PROD | LOCAL
@@ -19,8 +30,9 @@ Ensure that the latest version of ZXDB is running on your local machine, along w
 # ZXDB=name of local ZXDB database, defaults to zxdb
 > ES_HOST=http://internal.zxinfo.dk ES_PATH="/e" ZXDB=zxdb-1.0.212 node index.js | ES_HOST=http://localhost:9400 ES_PATH="" ZXDB=zxdb-1.0.212 node index.js
 ````
-A new suggester index has been created with the alias `zxinfo-search-write`.
+A new suggester index has been created with the alias `zxinfo-search-write`. Check with `elasitvue`.
 To switch to the updated index, assign the alias `zxinfo-search` to it and remove the alias from the previous index.
+</details>
 
 # Rebuild ZXInfo API v5
 
@@ -56,4 +68,7 @@ cd mappings && ./create_index.sh
 
 node index.js
 ```
+
+
+
 
