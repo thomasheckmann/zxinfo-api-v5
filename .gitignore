@@ -1,3 +1,4 @@
 node_modules/
 es-import/*.txt
 .DS_Store
+search-index/*.log
