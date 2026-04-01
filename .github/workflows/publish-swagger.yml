@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/v5
     paths:
       - "v5/swagger.yml"
       - "docs/index.html"
