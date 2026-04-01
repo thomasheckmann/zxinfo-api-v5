@@ -4,6 +4,7 @@ const debug = require("debug")(`zxinfo-api-v5:${moduleId}`);
 const express = require("express");
 const router = express.Router();
 
+const helpers = require("../common/helpersRequest");
 const { elasticClient, config, isDevelopment } = require("../common/elastic");
 
 var searchDoc = function (text, offset, size) {

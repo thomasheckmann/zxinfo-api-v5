@@ -4,9 +4,6 @@ const debug = require("debug")(`zxinfo-api-v5:${moduleId}`);
 const express = require("express");
 const router = express.Router();
 
-const tools = require("../common/utils");
-const queryHelper = require("../common/queryTerms");
-const search = require("../common/helpersSearch");
 const helpers = require("../common/helpersRequest");
 
 const { elasticClient, config, isDevelopment } = require("../common/elastic");
@@ -249,16 +246,8 @@ var preparePublisherSuggestions = function (result) {
  * OK:
  * curl "http://localhost:3000/v5/suggest/Head" | jq .
  * 
- * NOT OK: (invalid ID)
- * curl -s -D - "http://localhost:3000/v5/entries/002259x"
- * 
- * NOT FOUND:
- * curl -s -D - "http://localhost:3000/v5/entries/1231231"
- * 
  * RETURNS:
  * 200: OK
- * 404: Not Found (ID not found)
- * 422: Invalid Input (ID is invalid)
  * 500: Server error
  */
 router.get("/suggest/:query", function (req, res, next) {

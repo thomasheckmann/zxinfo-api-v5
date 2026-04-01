@@ -4,16 +4,8 @@ var express = require("express");
 var router = express.Router();
 var debug = require("debug")("zxinfo-api-v5");
 
-const metadata = require("./metadata/metadata");
-
-const typeahead = require("./typeahead/typeahead");
-const filecheck = require("./filecheck/filecheck");
 const filesearch = require("./filesearch/filesearch");
-
-const entries = require("./entries/entries");
 const suggest = require("./suggest/suggest");
-const search = require("./search/search");
-const magazines = require("./magazines/magazines");
 
 /************************************************
  *
@@ -29,16 +21,8 @@ router.use(function (req, res, next) {
   next(); // make sure we go to the next routes and don't stop here
 });
 
-router.get("/metadata", metadata);
-
-router.get("/typeahead/:context/:query", typeahead);
-router.get("/filecheck/*", filecheck);
 router.get("/filesearch/*", filesearch);
-
-router.get("/entries/*", entries);
 router.get("/suggest/*", suggest);
-router.get("/search/*", search);
-router.get("/magazines/*", magazines);
 
 router.get("*", (req, res) => {
   debug("[CATCH ALL]");
