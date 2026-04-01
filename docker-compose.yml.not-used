@@ -1,20 +1,19 @@
-version: "3"
-
 services:
   zxinfo-es-v8:
     build:
       context: ./elastic-8.17.0-alpine/
     ports:
-      - "9400:9200"
-      - "9500:9300"
+      - "${ES_HTTP_PORT:-9400}:9200"
+      - "${ES_TRANSPORT_PORT:-9500}:9300"
 
   zxinfo-api-v5:
     environment:
-      - NODE_ENV=production
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
     build:
       context: ./
     restart: on-failure
     ports:
-      - "8400:3000"
-    links:
+      - "${API_PORT:-8400}:${PORT:-3000}"
+    depends_on:
       - zxinfo-es-v8
