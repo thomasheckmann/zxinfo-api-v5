@@ -9,7 +9,6 @@ const port = process.env.PORT || 3000;
 
 // Import the router
 import routes from "./v5/routes.js";
-import zx_routes from "./v5/zx_routes.js";
 const appConfig = require("./v5/config.json");
 
 if (process.env.NODE_ENV === undefined) {
@@ -29,7 +28,6 @@ console.log("#");
 
 // Use the router for all paths starting with '/'
 app.use("/v5", routes);
-app.use("/zx", zx_routes);
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

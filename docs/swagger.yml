@@ -1,0 +1,83 @@
+openapi: "3.0.4"
+info:
+  title: ZXInfo API
+  version: "5.0.0"
+  description: |
+    ZXInfo API v5 endpoint subset for file search and suggestions.
+  contact:
+    name: ZXInfo API development
+    email: info@zxinfo.dk
+servers:
+  - url: https://api.zxinfo.dk/v5/
+tags:
+  - name: "zxinfo"
+    description: File search and suggestion endpoints
+paths:
+  /filesearch/{text}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Perform search in known .txt and .pdf files"
+      description: |
+        Return search results for txt and pdf documents known to ZXDB.
+      operationId: "fileSearch"
+      parameters:
+        - name: text
+          in: path
+          description: What to search for
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: OK
+        404:
+          description: Nothing found
+  /suggest/{query}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get mixed title/author/publisher suggestions"
+      operationId: "suggestAll"
+      parameters:
+        - name: query
+          in: path
+          description: Text to suggest from
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: OK
+  /suggest/author/{name}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get author suggestions"
+      operationId: "suggestAuthor"
+      parameters:
+        - name: name
+          in: path
+          description: Author name prefix
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: OK
+  /suggest/publisher/{name}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get publisher suggestions"
+      operationId: "suggestPublisher"
+      parameters:
+        - name: name
+          in: path
+          description: Publisher name prefix
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: OK

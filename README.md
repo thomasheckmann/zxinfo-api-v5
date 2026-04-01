@@ -1,6 +1,12 @@
 # zxinfo-api-v5
 ZXInfo v5 API - for accessing data in ZXDB
 
+## API Documentation
+
+Swagger UI (GitHub Pages):
+
+https://thomasheckmann.github.io/zxinfo-api-v5/
+
 ## Changes to Elasticserch
 ```
 Index names uses '-' dashes instead of '_' underscore.
@@ -28,6 +34,6 @@ cd es-import && ./import_zxinfo.sh
 
 ## RUN API for development
 ```
-nvm use v20.16.0
+nvm use v22
 DEBUG=zxinfo-api* node node_modules/nodemon/bin/nodemon.js
 ```
