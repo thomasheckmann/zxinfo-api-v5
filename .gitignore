@@ -2,3 +2,5 @@ node_modules/
 es-import/*.txt
 .DS_Store
 search-index/*.log
+v5/node_modules/
+v5/.DS_Store
