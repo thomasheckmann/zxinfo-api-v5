@@ -1,6 +1,4 @@
-"use strict";
-
-const tools = require("../common/utils");
+import { setDefaultValuesModeSizeOffsetSort } from "../common/utils.js";
 
 // constans for machinetype
 const ZXSPECTRUM = [
@@ -51,7 +49,7 @@ function defaultRouter(moduleId, debug, req, res, next) {
     debugInputRequest(debug, req);
 
     // set default values for mode, size & offset
-    req.query = tools.setDefaultValuesModeSizeOffsetSort(req.query);
+    req.query = setDefaultValuesModeSizeOffsetSort(req.query);
 
     // expand machinetype
     debug(`expanding: machinetype: ${req.query.machinetype}`);
@@ -115,7 +113,7 @@ function defaultRouter(moduleId, debug, req, res, next) {
     next(); // make sure we go to the next routes and don't stop here
 }
 
-module.exports = {
-    debugInputRequest: debugInputRequest,
-    defaultRouter: defaultRouter,
+export {
+    debugInputRequest,
+    defaultRouter,
 }

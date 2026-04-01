@@ -8,6 +8,10 @@
   },
   "name": "zxinfo-api-v5",
   "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "description": "ZXInfo API v5",
   "main": "app.js",
   "scripts": {

@@ -1,12 +1,15 @@
-const express = require("express");
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
+import express from "express";
 const app = express();
 
 // Use environment variable or default to port 3000
 const port = process.env.PORT || 3000;
 
 // Import the router
-const routes = require("./v5/routes");
-const zx_routes = require("./v5/zx_routes");
+import routes from "./v5/routes.js";
+import zx_routes from "./v5/zx_routes.js";
 const appConfig = require("./v5/config.json");
 
 if (process.env.NODE_ENV === undefined) {

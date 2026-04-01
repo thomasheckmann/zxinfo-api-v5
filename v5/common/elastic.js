@@ -1,8 +1,9 @@
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 const config = require("../config.json")[process.env.NODE_ENV || "development"];
 
-const { Client, ClientOptions } = require("@elastic/elasticsearch");
-
-const { Transport } = require('@elastic/transport');
+import { Client } from "@elastic/elasticsearch";
+import { Transport } from "@elastic/transport";
 let baseUrl = config.es_host ? config.es_host : "http://localhost:9200";
 let path = config.es_path ? config.es_path : "";
 
@@ -22,13 +23,6 @@ const elasticClient = new Client({
   Transport: MTransport,
 });
 
-// const elasticsearch = require("@elastic/elasticsearch");
-// const elasticClient = new elasticsearch.Client({
-//   node: config.es_host,
-//   apiVersion: config.es_apiVersion,
-//   log: config.es_log,
-// });
-
 const isDevelopment = process.env.NODE_ENV !== "production";
 
-module.exports = { elasticClient, config, isDevelopment };
+export { elasticClient, config, isDevelopment };
