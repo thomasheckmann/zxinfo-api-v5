@@ -6,7 +6,24 @@ import { elasticClient, config } from "../common/elastic.js";
 
 const moduleId = "filesearch";
 const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
+const debugTrace = debugLib(`zxinfo-api-v5:${moduleId}:trace`);
+const debugError = debugLib(`zxinfo-api-v5:${moduleId}:error`);
 const router = express.Router();
+
+const formatLogValue = (value) => {
+    if (value === undefined || value === null) {
+        return "n/a";
+    }
+    const text = String(value);
+    return text.includes(" ") ? JSON.stringify(text) : text;
+};
+
+const logEvent = (logger, fields) => {
+    const message = Object.entries(fields)
+        .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+        .join(" ");
+    logger(message);
+};
 
 /**
  * Full-text search across indexed .txt and .pdf document content in the zxdb_doc index.
@@ -18,7 +35,14 @@ const router = express.Router();
  * @param {number} size - Number of results to return (1–100).
  */
 const searchDoc = (text, offset, size) => {
-    debug(`searchDoc() : ${text}`);
+    logEvent(debugTrace, {
+        level: "trace",
+        event: "request.search.query",
+        module: moduleId,
+        textLen: text.length,
+        offset,
+        size,
+    });
     return elasticClient.search({
         _source: {
             includes: ["_id", "highlight", "file", "file.url"],
@@ -46,7 +70,12 @@ const searchDoc = (text, offset, size) => {
  * @param {string} checksum - SHA-512 hash of the file to look up.
  */
 const lookupHash = (checksum) => {
-    debug(`lookupHash() : ${checksum}`);
+    logEvent(debugTrace, {
+        level: "trace",
+        event: "request.entry.lookup",
+        module: moduleId,
+        checksum,
+    });
     return elasticClient.search({
         _source_includes: ["_id", "title", "zxinfoVersion", "contentType", "originalYearOfRelease", "machineType", "genre", "genreType", "genreSubType", "publishers.name", "md5hash"],
         _source_excludes: ["titlesuggest", "publishersuggest", "authorsuggest", "metadata_author", "metadata_publisher"],
@@ -74,14 +103,36 @@ const lookupHash = (checksum) => {
  *   500 - Elasticsearch error
  */
 router.get("/filesearch/:text", async (req, res) => {
-    debug("==> /filesearch");
-    debug(`\ttext: ${req.params.text}`);
+    logEvent(debug, {
+        level: "info",
+        event: "request.start",
+        module: moduleId,
+        route: "/filesearch/:text",
+        method: req.method,
+        path: req.path,
+    });
 
     const text = req.params.text.trim();
     if (text.length === 0) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/filesearch/:text",
+            errMessage: "Search text must not be empty",
+            status: 422,
+        });
         return res.status(422).json({ error: "Search text must not be empty" });
     }
     if (text.length > 200) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/filesearch/:text",
+            errMessage: "Search text must not exceed 200 characters",
+            status: 422,
+        });
         return res.status(422).json({ error: "Search text must not exceed 200 characters" });
     }
 
@@ -89,14 +140,38 @@ router.get("/filesearch/:text", async (req, res) => {
     const size = Math.min(100, Math.max(1, parseInt(req.query.size, 10) || 30));
     const offset = pg * size;
 
-    debug(`\toffset: ${offset}`);
-    debug(`\tsize: ${size}`);
+    logEvent(debug, {
+        level: "info",
+        event: "request.validated",
+        module: moduleId,
+        route: "/filesearch/:text",
+        textLen: text.length,
+        offset,
+        size,
+    });
 
     try {
+        const startedAt = Date.now();
         const result = await searchDoc(text, offset, size);
         res.header("X-Total-Count", result.hits.total.value);
+        logEvent(debug, {
+            level: "info",
+            event: "request.search.executed",
+            module: moduleId,
+            route: "/filesearch/:text",
+            total: result.hits.total.value,
+            durationMs: Date.now() - startedAt,
+        });
 
         if (result.hits.total.value === 0) {
+            logEvent(debug, {
+                level: "info",
+                event: "request.response.sent",
+                module: moduleId,
+                route: "/filesearch/:text",
+                status: 404,
+                total: 0,
+            });
             return res.status(404).end();
         }
 
@@ -104,7 +179,14 @@ router.get("/filesearch/:text", async (req, res) => {
         for (let i = 0; i < docsFound.length; i++) {
             const entryObj = await lookupHash(docsFound[i]._source.file.checksum);
             if (!entryObj.hits.hits[0]) {
-                console.error(`[NOT FOUND] ${docsFound[i]._source.file.filename}\n${JSON.stringify(docsFound[i], null, 2)}`);
+                logEvent(debugError, {
+                    level: "error",
+                    event: "request.missing-entry",
+                    module: moduleId,
+                    route: "/filesearch/:text",
+                    filename: docsFound[i]._source.file.filename,
+                    checksum: docsFound[i]._source.file.checksum,
+                });
             }
             const sha512 = docsFound[i]._source.file.checksum;
             const filename = docsFound[i]._source.file.filename;
@@ -125,16 +207,39 @@ router.get("/filesearch/:text", async (req, res) => {
             }
             docsFound[i].entry = details;
         }
+        logEvent(debug, {
+            level: "info",
+            event: "request.response.sent",
+            module: moduleId,
+            route: "/filesearch/:text",
+            status: 200,
+            total: docsFound.length,
+        });
         res.send(docsFound);
     } catch (err) {
-        debug(`[FAILED] reason: ${err.message}`);
-        res.status(err.message === "Not Found" ? 404 : 500).end();
+        const status = err.message === "Not Found" ? 404 : 500;
+        logEvent(debugError, {
+            level: "error",
+            event: "request.error",
+            module: moduleId,
+            route: "/filesearch/:text",
+            errType: err.name,
+            errMessage: err.message,
+            status,
+        });
+        res.status(status).end();
     }
 });
 
 router.use((req, res, next) => {
-    debug(`FILESEARCH: ${req.path}`);
-    debug(`user-agent: ${req.headers["user-agent"]}`);
+    logEvent(debug, {
+        level: "info",
+        event: "module.middleware",
+        module: moduleId,
+        path: req.path,
+        method: req.method,
+        userAgent: req.headers["user-agent"],
+    });
     defaultRouter(moduleId, debug, req, res, next);
 });
 

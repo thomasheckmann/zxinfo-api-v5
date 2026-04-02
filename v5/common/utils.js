@@ -4,6 +4,22 @@ import * as flatPkg from "flat";
 const flatten = flatPkg.flatten ?? flatPkg.default?.flatten;
 
 const debug = debugLib("zxinfo-api-v5:utils");
+const debugTrace = debugLib("zxinfo-api-v5:utils:trace");
+
+const formatLogValue = (value) => {
+  if (value === undefined || value === null) {
+    return "n/a";
+  }
+  const text = String(value);
+  return text.includes(" ") ? JSON.stringify(text) : text;
+};
+
+const logEvent = (logger, fields) => {
+  const message = Object.entries(fields)
+    .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+    .join(" ");
+  logger(message);
+};
 
 const DEFAULT_MODE = "compact";
 const DEFAULT_SIZE = 25;
@@ -20,30 +36,30 @@ const DEFAULT_SORT = "rel_desc";
  *
  */
 const setDefaultValuesModeSizeOffsetSort = (q) => {
-  debug(`setDefaultValuesModeSizeOffsetSort`);
+  logEvent(debug, { level: "info", event: "utils.defaults.apply", module: "utils" });
   if (!q.mode) {
-    debug(`setting mode=${DEFAULT_MODE}`);
+    logEvent(debugTrace, { level: "trace", event: "utils.defaults.set", module: "utils", field: "mode", value: DEFAULT_MODE });
     q.mode = DEFAULT_MODE;
   }
   if (!q.size) {
-    debug(`setting size=${DEFAULT_SIZE}`);
+    logEvent(debugTrace, { level: "trace", event: "utils.defaults.set", module: "utils", field: "size", value: DEFAULT_SIZE });
     q.size = DEFAULT_SIZE;
   }
   if (!q.offset) {
-    debug(`setting offset=${DEFAULT_OFFSET}`);
+    logEvent(debugTrace, { level: "trace", event: "utils.defaults.set", module: "utils", field: "offset", value: DEFAULT_OFFSET });
     q.offset = DEFAULT_OFFSET;
   }
   if (!q.sort) {
-    debug(`setting sort=${DEFAULT_SORT}`);
+    logEvent(debugTrace, { level: "trace", event: "utils.defaults.set", module: "utils", field: "sort", value: DEFAULT_SORT });
     q.sort = DEFAULT_SORT;
   }
   return q;
 };
 
 const setDefaultValueMode = (q) => {
-  debug(`setDefaultValueMode`);
+  logEvent(debug, { level: "info", event: "utils.defaults.mode", module: "utils" });
   if (!q.mode) {
-    debug(`setting mode=${DEFAULT_MODE}`);
+    logEvent(debugTrace, { level: "trace", event: "utils.defaults.set", module: "utils", field: "mode", value: DEFAULT_MODE });
     q.mode = DEFAULT_MODE;
   }
   return q;
@@ -141,7 +157,7 @@ const getSortObject = (sort_mode) => {
  * @param {*} outputmode
  */
 const es_source_item = (outputmode) => {
-  debug(`es_source_item() : outputmode: ${outputmode}`);
+  logEvent(debugTrace, { level: "trace", event: "utils.es_source_item", module: "utils", mode: outputmode });
   if (outputmode === "full") {
     /* full output */
     return ["*"];
@@ -218,8 +234,13 @@ const es_source_item = (outputmode) => {
  * } outputmode
  */
 const es_source_list = (outputmode, includeAgg = false) => {
-  debug(`es_source_list() : outputmode: ${outputmode}`);
-  debug(`es_source_list() : includeAgg: ${includeAgg}`);
+  logEvent(debugTrace, {
+    level: "trace",
+    event: "utils.es_source_list",
+    module: "utils",
+    mode: outputmode,
+    includeAgg,
+  });
   if (outputmode === "full") {
     /* full output */
     return ["*"];
@@ -279,10 +300,13 @@ const es_source_list = (outputmode, includeAgg = false) => {
  *
  */
 const renderSimpleOutput = (r) => {
-  debug(`renderSimpleOutput() :`);
-  debug(r);
-
   const hits = r?.hits?.hits ?? [];
+  logEvent(debugTrace, {
+    level: "trace",
+    event: "utils.render.simple",
+    module: "utils",
+    hits: hits.length,
+  });
   return hits.map((item) => ({ id: item._id, title: item._source.title }));
 };
 
@@ -292,35 +316,52 @@ const renderSimpleOutput = (r) => {
  *
  */
 const renderFlatOutputEntries = (r) => {
-  debug(`renderFlatOutputEntries() :`);
-  debug(r);
-
   const data = flatten(r);
-  debug(`renderFlatOutputEntries()`);
-  debug(data);
+  logEvent(debugTrace, {
+    level: "trace",
+    event: "utils.render.flat.entries.start",
+    module: "utils",
+    keys: Object.keys(data).length,
+  });
   let result = "";
+  let emitted = 0;
   for (const [key, value] of Object.entries(data)) {
     if (key.startsWith("hits.") || key.startsWith("aggregations.")) {
       result += key.replace("hits.", "").replace("_source.", "") + "=" + value + "\n";
-      debug(`${key}: ${value}`);
+      emitted += 1;
     }
   }
+  logEvent(debugTrace, {
+    level: "trace",
+    event: "utils.render.flat.entries.done",
+    module: "utils",
+    emitted,
+  });
   return result;
 };
 
 const renderFlatOutputEntry = (r) => {
-  debug(`renderFlatOutputEntries() :`);
-  debug(r);
-
   const data = flatten(r);
-  debug(`renderFlatOutputEntries()`);
-  debug(data);
+  logEvent(debugTrace, {
+    level: "trace",
+    event: "utils.render.flat.entry.start",
+    module: "utils",
+    keys: Object.keys(data).length,
+  });
   let result = "";
+  let emitted = 0;
   for (const [key, value] of Object.entries(data)) {
     if (key.startsWith("_source.")) {
       result += key.replace("_source.", "") + "=" + value + "\n";
+      emitted += 1;
     }
   }
+  logEvent(debugTrace, {
+    level: "trace",
+    event: "utils.render.flat.entry.done",
+    module: "utils",
+    emitted,
+  });
   return result;
 };
 

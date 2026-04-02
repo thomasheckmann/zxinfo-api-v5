@@ -62,6 +62,14 @@ test("GET /entries/byletter/# returns digit-prefixed entries", async () => {
   }
 });
 
+test("GET /entries/byletter/:letter returns 422 for invalid letter", async () => {
+  const response = await fetch(`${API_ENDPOINT_URL}/entries/byletter/ab?size=5`);
+  assert.equal(response.status, 422);
+  assert.ok(isJsonResponse(response));
+  const payload = await response.json();
+  assert.equal(typeof payload.error, "string");
+});
+
 // ── /entries/morelikethis/:entryid ────────────────────────────────────────────
 
 test("GET /entries/morelikethis/:entryid returns 404 for non-numeric ID", async () => {

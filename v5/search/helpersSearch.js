@@ -5,6 +5,23 @@ import { es_source_list, renderFlatOutputEntries, renderSimpleOutput } from "../
 
 const moduleId = "helperSearch";
 const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
+const debugTrace = debugLib(`zxinfo-api-v5:${moduleId}:trace`);
+const debugError = debugLib(`zxinfo-api-v5:${moduleId}:error`);
+
+const formatLogValue = (value) => {
+    if (value === undefined || value === null) {
+        return "n/a";
+    }
+    const text = String(value);
+    return text.includes(" ") ? JSON.stringify(text) : text;
+};
+
+const logEvent = (logger, fields) => {
+    const message = Object.entries(fields)
+        .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+        .join(" ");
+    logger(message);
+};
 
 /**
  * Normalizes the include-aggregations flag accepted by the API.
@@ -34,15 +51,23 @@ const shouldIncludeAggregations = (includeAgg) => (
  * @returns {Promise<void>} Resolves when the HTTP response has been sent.
  */
 const ZXSearchEntries = async (query, aggregations, includeAgg, pageSize, offset, sortObject, outputMode, explain, output, res) => {
-    debug("searchEntries()");
-    debug(`\tsize: ${pageSize}`);
-    debug(`\toffset: ${offset}`);
-    debug(`\tsort object: ${sortObject}`);
-    debug(`\tmode: ${outputMode}`);
+    logEvent(debug, {
+        level: "info",
+        event: "search.execute.start",
+        module: moduleId,
+        size: pageSize,
+        offset,
+        sort: JSON.stringify(sortObject),
+        mode: outputMode,
+        includeAgg,
+        output,
+        explain: explain !== undefined,
+    });
 
     const fromOffset = pageSize * offset;
 
     try {
+        const startedAt = Date.now();
         const body = {
             track_scores: true,
             size: pageSize,
@@ -62,11 +87,31 @@ const ZXSearchEntries = async (query, aggregations, includeAgg, pageSize, offset
             body,
         });
 
-        debug("########### RESPONSE from elasticsearch");
-        debug(result);
-        debug("#############################################################");
+        logEvent(debug, {
+            level: "info",
+            event: "search.execute.result",
+            module: moduleId,
+            total: result.hits.total.value,
+            returned: result.hits.hits.length,
+            durationMs: Date.now() - startedAt,
+        });
+
+        logEvent(debugTrace, {
+            level: "trace",
+            event: "search.execute.meta",
+            module: moduleId,
+            total: result.hits.total.value,
+            hasAggregations: result.aggregations !== undefined,
+        });
 
         if (explain !== undefined) {
+            logEvent(debug, {
+                level: "info",
+                event: "search.response.sent",
+                module: moduleId,
+                status: 200,
+                responseType: "raw",
+            });
             res.send(result);
             return;
         }
@@ -74,17 +119,45 @@ const ZXSearchEntries = async (query, aggregations, includeAgg, pageSize, offset
         res.header("X-Total-Count", result.hits.total.value);
 
         if (output === "simple") {
+            logEvent(debug, {
+                level: "info",
+                event: "search.response.sent",
+                module: moduleId,
+                status: 200,
+                responseType: "simple",
+            });
             res.send(renderSimpleOutput(result));
             return;
         }
         if (output === "flat") {
             res.header("content-type", "text/plain;charset=UTF-8");
+            logEvent(debug, {
+                level: "info",
+                event: "search.response.sent",
+                module: moduleId,
+                status: 200,
+                responseType: "flat",
+            });
             res.send(renderFlatOutputEntries(result));
             return;
         }
+        logEvent(debug, {
+            level: "info",
+            event: "search.response.sent",
+            module: moduleId,
+            status: 200,
+            responseType: "json",
+        });
         res.send(result);
     } catch (err) {
-        debug(`[FAILED] ${err.message}`);
+        logEvent(debugError, {
+            level: "error",
+            event: "search.execute.error",
+            module: moduleId,
+            errType: err.name,
+            errMessage: err.message,
+            status: 500,
+        });
         res.status(500).end();
     }
 };

@@ -19,32 +19,54 @@ const PENTAGON = ["Scorpion", "Pentagon 128"];
 // constans for genretype
 const GAMES = ["Adventure Game", "Arcade Game", "Casual Game", "Game", "Sport Game", "Strategy Game"];
 
-function debugInputRequest(debug, req) {
-    debug(`output ==>`);
-    debug(`\tmode: ${req.query.mode}`);
-    debug(`\tsize: ${req.query.size}`);
-    debug(`\toffset: ${req.query.offset}`);
-    debug(`\tsort: ${req.query.sort}`);
+const formatLogValue = (value) => {
+    if (value === undefined || value === null) {
+        return "n/a";
+    }
+    const text = String(value);
+    return text.includes(" ") ? JSON.stringify(text) : text;
+};
 
-    debug(`filtering ==>`);
-    debug(`\tcontenttype: ${req.query.contenttype}`);
-    debug(`\tmachinetype: ${req.query.machinetype}`);
-    debug(`\txrated: ${req.query.xrated}`);
-    debug(`\tgenretype: ${req.query.genretype}`);
-    debug(`\tgenresubtype: ${req.query.genresubtype}`);
-    debug(`\tcontrol: ${req.query.control}`);
-    debug(`\tmultiplayermode: ${req.query.multiplayermode}`);
-    debug(`\tmultiplayertype: ${req.query.multiplayertype}`);
-    debug(`\tavailability: ${req.query.availability}`);
-    debug(`\tlanguage: ${req.query.language}`);
-    debug(`\tyear: ${req.query.year}`);
-    debug(`\tgroup: ${req.query.group}`);
-    debug(`\tgroupname: ${req.query.groupname}`);
-    debug(`\ttosectype: ${req.query.tosectype}`);
+const logEvent = (debug, fields) => {
+    const message = Object.entries(fields)
+        .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+        .join(" ");
+    debug(message);
+};
+
+function debugInputRequest(debug, req) {
+    logEvent(debug, {
+        level: "trace",
+        event: "request.query.snapshot",
+        mode: req.query.mode,
+        size: req.query.size,
+        offset: req.query.offset,
+        sort: req.query.sort,
+        contenttype: req.query.contenttype,
+        machinetype: req.query.machinetype,
+        xrated: req.query.xrated,
+        genretype: req.query.genretype,
+        genresubtype: req.query.genresubtype,
+        control: req.query.control,
+        multiplayermode: req.query.multiplayermode,
+        multiplayertype: req.query.multiplayertype,
+        availability: req.query.availability,
+        language: req.query.language,
+        year: req.query.year,
+        group: req.query.group,
+        groupname: req.query.groupname,
+        tosectype: req.query.tosectype,
+    });
 }
 
 function defaultRouter(moduleId, debug, req, res, next) {
-    debug(`API v5 [${moduleId}] - ${req.path}`);
+    logEvent(debug, {
+        level: "info",
+        event: "request.defaults.start",
+        module: moduleId,
+        path: req.path,
+        method: req.method,
+    });
     // do logging
     debugInputRequest(debug, req);
 
@@ -52,7 +74,12 @@ function defaultRouter(moduleId, debug, req, res, next) {
     req.query = setDefaultValuesModeSizeOffsetSort(req.query);
 
     // expand machinetype
-    debug(`expanding: machinetype: ${req.query.machinetype}`);
+    logEvent(debug, {
+        level: "trace",
+        event: "request.expand.machinetype.start",
+        module: moduleId,
+        value: req.query.machinetype,
+    });
     if (req.query.machinetype) {
         var mTypes = [];
         if (!Array.isArray(req.query.machinetype)) {
@@ -60,18 +87,39 @@ function defaultRouter(moduleId, debug, req, res, next) {
         }
 
         for (var i = 0; i < req.query.machinetype.length; i++) {
-            debug(`\t${i} - ${req.query.machinetype[i]}`);
+            logEvent(debug, {
+                level: "trace",
+                event: "request.expand.machinetype.item",
+                module: moduleId,
+                index: i,
+                value: req.query.machinetype[i],
+            });
             switch (req.query.machinetype[i]) {
                 case "ZXSPECTRUM":
-                    debug("- ZXSPECTRUM -");
+                    logEvent(debug, {
+                        level: "trace",
+                        event: "request.expand.machinetype.alias",
+                        module: moduleId,
+                        alias: "ZXSPECTRUM",
+                    });
                     mTypes = mTypes.concat(ZXSPECTRUM);
                     break;
                 case "ZX81":
-                    debug("- ZX81 -");
+                    logEvent(debug, {
+                        level: "trace",
+                        event: "request.expand.machinetype.alias",
+                        module: moduleId,
+                        alias: "ZX81",
+                    });
                     mTypes = mTypes.concat(ZX81);
                     break;
                 case "PENTAGON":
-                    debug("- PENTAGON -");
+                    logEvent(debug, {
+                        level: "trace",
+                        event: "request.expand.machinetype.alias",
+                        module: moduleId,
+                        alias: "PENTAGON",
+                    });
                     mTypes = mTypes.concat(PENTAGON);
                     break;
                 default:
@@ -80,11 +128,21 @@ function defaultRouter(moduleId, debug, req, res, next) {
             }
         }
         req.query.machinetype = mTypes;
-        debug(`mType: ${mTypes}`);
+        logEvent(debug, {
+            level: "trace",
+            event: "request.expand.machinetype.done",
+            module: moduleId,
+            value: mTypes,
+        });
     }
 
     // expand genretype
-    debug(`expanding: genretype: ${req.query.genretype}`);
+    logEvent(debug, {
+        level: "trace",
+        event: "request.expand.genretype.start",
+        module: moduleId,
+        value: req.query.genretype,
+    });
     if (req.query.genretype) {
         var gTypes = [];
         if (!Array.isArray(req.query.genretype)) {
@@ -92,10 +150,21 @@ function defaultRouter(moduleId, debug, req, res, next) {
         }
 
         for (var i = 0; i < req.query.genretype.length; i++) {
-            debug(`${i} - ${req.query.genretype[i]}`);
+            logEvent(debug, {
+                level: "trace",
+                event: "request.expand.genretype.item",
+                module: moduleId,
+                index: i,
+                value: req.query.genretype[i],
+            });
             switch (req.query.genretype[i]) {
                 case "GAMES":
-                    debug("- GAMES -");
+                    logEvent(debug, {
+                        level: "trace",
+                        event: "request.expand.genretype.alias",
+                        module: moduleId,
+                        alias: "GAMES",
+                    });
                     gTypes = gTypes.concat(GAMES);
                     break;
                 default:
@@ -104,10 +173,20 @@ function defaultRouter(moduleId, debug, req, res, next) {
             }
         }
         req.query.genretype = gTypes;
-        debug(`mType: ${gTypes}`);
+        logEvent(debug, {
+            level: "trace",
+            event: "request.expand.genretype.done",
+            module: moduleId,
+            value: gTypes,
+        });
     }
 
-    debug(`** READY TO SEARCH ***`);
+    logEvent(debug, {
+        level: "info",
+        event: "request.defaults.ready",
+        module: moduleId,
+        path: req.path,
+    });
     debugInputRequest(debug, req);
 
     next(); // make sure we go to the next routes and don't stop here

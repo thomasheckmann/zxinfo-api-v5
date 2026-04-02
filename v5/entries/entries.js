@@ -9,7 +9,56 @@ import { ZXSearchEntries } from "../search/helpersSearch.js";
 
 const moduleId = "entries";
 const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
+const debugTrace = debugLib(`zxinfo-api-v5:${moduleId}:trace`);
+const debugError = debugLib(`zxinfo-api-v5:${moduleId}:error`);
 const router = express.Router();
+
+const formatLogValue = (value) => {
+  if (value === undefined || value === null) {
+    return "n/a";
+  }
+  const text = String(value);
+  return text.includes(" ") ? JSON.stringify(text) : text;
+};
+
+const logEvent = (logger, fields) => {
+  const message = Object.entries(fields)
+    .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+    .join(" ");
+  logger(message);
+};
+
+/**
+ * Validates and normalizes a numeric entry ID to a zero-padded 7-digit string.
+ *
+ * @param {string|number|undefined} rawId - Incoming entry ID value.
+ * @returns {string|null} Normalized 7-digit ID, or null when invalid.
+ */
+const normalizeEntryId = (rawId) => {
+  const value = String(rawId ?? "").trim();
+  if (!/^[0-9]{1,7}$/.test(value)) {
+    return null;
+  }
+  return value.padStart(7, "0");
+};
+
+/**
+ * Validates and normalizes the by-letter route parameter.
+ * Accepts exactly one alphabetic character or '#'.
+ *
+ * @param {string|undefined} rawLetter - Incoming letter route parameter.
+ * @returns {string|null} Normalized lowercase letter or '#', or null when invalid.
+ */
+const normalizeByLetterParam = (rawLetter) => {
+  const value = String(rawLetter ?? "").trim();
+  if (value === "#") {
+    return value;
+  }
+  if (/^[a-zA-Z]$/.test(value)) {
+    return value.toLowerCase();
+  }
+  return null;
+};
 
 /**
  * Fetches a single ZXDB entry by its zero-padded 7-digit ID.
@@ -19,7 +68,13 @@ const router = express.Router();
  * @returns {Promise<Object>} Elasticsearch get response.
  */
 const getEntryById = (entryid, outputmode) => {
-  debug(`getEntryById() : ${entryid}, outputmode: ${outputmode}`);
+  logEvent(debugTrace, {
+    level: "trace",
+    event: "entry.lookup",
+    module: moduleId,
+    entryId: entryid,
+    mode: outputmode,
+  });
   return elasticClient.get({
     _source_includes: es_source_item(outputmode),
     _source_excludes: ["titlesuggest", "publishersuggest", "authorsuggest", "metadata_author", "metadata_publisher"],
@@ -29,8 +84,14 @@ const getEntryById = (entryid, outputmode) => {
 };
 
 router.use((req, res, next) => {
-  debug(`ENTRIES: ${req.path}`);
-  debug(`user-agent: ${req.headers["user-agent"]}`);
+  logEvent(debug, {
+    level: "info",
+    event: "module.middleware",
+    module: moduleId,
+    path: req.path,
+    method: req.method,
+    userAgent: req.headers["user-agent"],
+  });
   defaultRouter(moduleId, debug, req, res, next);
 });
 
@@ -51,18 +112,35 @@ router.use((req, res, next) => {
  *   500 - Elasticsearch error
  */
 router.get("/entries/:entryid", async (req, res) => {
-  debug("==> /entries/:entryid");
-  debug(
-    `entryid: ${req.params.entryid}, len: ${req.params.entryid.length}, isInt: ${Number.isInteger(parseInt(req.params.entryid))}`
-  );
+  logEvent(debug, {
+    level: "info",
+    event: "request.start",
+    module: moduleId,
+    route: "/entries/:entryid",
+    method: req.method,
+    path: req.path,
+  });
+  const id = normalizeEntryId(req.params.entryid);
+  logEvent(debug, {
+    level: "info",
+    event: "request.validated",
+    module: moduleId,
+    route: "/entries/:entryid",
+    entryIdRaw: req.params.entryid,
+    entryId: id,
+  });
 
-  if (Number.isInteger(parseInt(req.params.entryid)) && req.params.entryid.length < 8) {
-    const id = ("0000000" + req.params.entryid).slice(-7);
+  if (id !== null) {
     try {
       const result = await getEntryById(id, req.query.mode);
-      debug(`########### RESPONSE from getEntryById(${id},${req.query.mode})`);
-      debug(result);
-      debug(`#############################################################`);
+      logEvent(debug, {
+        level: "info",
+        event: "request.response.ready",
+        module: moduleId,
+        route: "/entries/:entryid",
+        status: 200,
+        output: req.query.output,
+      });
       if (req.query.output === "flat") {
         res.header("content-type", "text/plain;charset=UTF-8");
         res.send(renderFlatOutputEntry(result));
@@ -70,10 +148,27 @@ router.get("/entries/:entryid", async (req, res) => {
         res.send(result);
       }
     } catch (reason) {
-      debug(`[FAILED] reason: ${reason.message}`);
-      res.status(reason.statusCode === 404 ? 404 : 500).end();
+      const status = reason.statusCode === 404 ? 404 : 500;
+      logEvent(debugError, {
+        level: "error",
+        event: "request.error",
+        module: moduleId,
+        route: "/entries/:entryid",
+        errType: reason.name,
+        errMessage: reason.message,
+        status,
+      });
+      res.status(status).end();
     }
   } else {
+    logEvent(debugError, {
+      level: "error",
+      event: "request.validation.failed",
+      module: moduleId,
+      route: "/entries/:entryid",
+      errMessage: "Invalid entry ID",
+      status: 400,
+    });
     res.status(400).end();
   }
 });
@@ -101,15 +196,36 @@ router.get("/entries/:entryid", async (req, res) => {
  *   500 - Elasticsearch error
  */
 router.get("/entries/byletter/:letter", async (req, res) => {
-  debug(`==> /entries/byletter/ [${req.params.letter}]`);
+  logEvent(debug, {
+    level: "info",
+    event: "request.start",
+    module: moduleId,
+    route: "/entries/byletter/:letter",
+    method: req.method,
+    path: req.path,
+    letter: req.params.letter,
+  });
 
   const sortObject = getSortObject(req.query.sort);
   const filterQuery = createFilterQuery(req);
 
-  const letter = req.params.letter.toLowerCase();
+  const letter = normalizeByLetterParam(req.params.letter);
+  if (letter === null) {
+    logEvent(debugError, {
+      level: "error",
+      event: "request.validation.failed",
+      module: moduleId,
+      route: "/entries/byletter/:letter",
+      errMessage: "Letter must be A-Z or #",
+      status: 422,
+    });
+    res.status(422).json({ error: "Letter must be A-Z or #" });
+    return;
+  }
+
   const expr = letter === "#"
     ? "[0-9].*"
-    : "[" + letter.toLowerCase() + letter.toUpperCase() + "].*";
+    : `[${letter}${letter.toUpperCase()}].*`;
 
   const qLetter = {
     regexp: {
@@ -155,14 +271,28 @@ router.get("/entries/byletter/:letter", async (req, res) => {
  *   500 - Elasticsearch error
  */
 router.get("/entries/morelikethis/:entryid", async (req, res) => {
-  debug(`==> /entries/morelikethis/ [${req.params.entryid}]`);
+  logEvent(debug, {
+    level: "info",
+    event: "request.start",
+    module: moduleId,
+    route: "/entries/morelikethis/:entryid",
+    method: req.method,
+    path: req.path,
+  });
 
   const sortObject = getSortObject(req.query.sort);
   const filterQuery = createFilterQuery(req);
+  const id = normalizeEntryId(req.params.entryid);
+  logEvent(debug, {
+    level: "info",
+    event: "request.validated",
+    module: moduleId,
+    route: "/entries/morelikethis/:entryid",
+    entryIdRaw: req.params.entryid,
+    entryId: id,
+  });
 
-  if (Number.isInteger(parseInt(req.params.entryid)) && req.params.entryid.length < 8) {
-    const id = ("0000000" + req.params.entryid).slice(-7);
-
+  if (id !== null) {
     const q = {
       more_like_this: {
         fields: ["machineType", "genreType", "genreSubType", "contentType"],
@@ -181,6 +311,14 @@ router.get("/entries/morelikethis/:entryid", async (req, res) => {
     const aggregationQuery = createAggregationQuery(req, q);
     await ZXSearchEntries(q, aggregationQuery, req.query.includeagg, req.query.size, req.query.offset, sortObject, req.query.mode, req.query.explain, req.query.output, res);
   } else {
+    logEvent(debugError, {
+      level: "error",
+      event: "request.validation.failed",
+      module: moduleId,
+      route: "/entries/morelikethis/:entryid",
+      errMessage: "Invalid entry ID",
+      status: 404,
+    });
     res.status(404).end();
   }
 });
@@ -209,7 +347,14 @@ router.get("/entries/morelikethis/:entryid", async (req, res) => {
  *   500 - Elasticsearch error
  */
 router.get("/entries/byauthor/:name", async (req, res) => {
-  debug(`==> /entries/byauthor/ [${req.params.name}]`);
+  logEvent(debug, {
+    level: "info",
+    event: "request.start",
+    module: moduleId,
+    route: "/entries/byauthor/:name",
+    method: req.method,
+    path: req.path,
+  });
 
   const sortObject = getSortObject(req.query.sort);
   const filterQuery = createFilterQuery(req);
@@ -292,7 +437,14 @@ router.get("/entries/byauthor/:name", async (req, res) => {
  *   500 - Elasticsearch error
  */
 router.get("/entries/bypublisher/:name", async (req, res) => {
-  debug(`==> /entries/bypublisher/ [${req.params.name}]`);
+  logEvent(debug, {
+    level: "info",
+    event: "request.start",
+    module: moduleId,
+    route: "/entries/bypublisher/:name",
+    method: req.method,
+    path: req.path,
+  });
 
   const sortObject = getSortObject(req.query.sort);
   const filterQuery = createFilterQuery(req);
@@ -365,7 +517,13 @@ router.get("/entries/bypublisher/:name", async (req, res) => {
  * @returns {Promise<Object>} Elasticsearch search response.
  */
 const getRandomX = (total, outputmode) => {
-  debug("getRandomX()");
+  logEvent(debugTrace, {
+    level: "trace",
+    event: "random.query",
+    module: moduleId,
+    total,
+    mode: outputmode,
+  });
 
   if (outputmode !== "full" && outputmode !== "compact") {
     outputmode = "tiny";
@@ -460,14 +618,28 @@ const getRandomX = (total, outputmode) => {
  *   500 - Elasticsearch error
  */
 router.get("/entries/random/:total", async (req, res) => {
-  debug("==> /entries/random/:total");
-  debug(`total: ${req.params.total}, mode: ${req.query.mode}`);
+  logEvent(debug, {
+    level: "info",
+    event: "request.start",
+    module: moduleId,
+    route: "/entries/random/:total",
+    method: req.method,
+    path: req.path,
+    total: req.params.total,
+    mode: req.query.mode,
+  });
 
   try {
     const result = await getRandomX(req.params.total, req.query.mode);
-    debug(`########### RESPONSE from getRandomX(${req.params.total}, mode: ${req.query.mode})`);
-    debug(result);
-    debug(`#############################################################`);
+    logEvent(debug, {
+      level: "info",
+      event: "request.response.ready",
+      module: moduleId,
+      route: "/entries/random/:total",
+      status: 200,
+      total: result.hits.total.value,
+      output: req.query.output,
+    });
     res.header("X-Total-Count", result.hits.total.value);
     if (req.query.output === "simple") {
       res.send(renderSimpleOutput(result));
@@ -478,7 +650,15 @@ router.get("/entries/random/:total", async (req, res) => {
       res.send(result);
     }
   } catch (err) {
-    debug(`[FAILED] reason: ${err.message}`);
+    logEvent(debugError, {
+      level: "error",
+      event: "request.error",
+      module: moduleId,
+      route: "/entries/random/:total",
+      errType: err.name,
+      errMessage: err.message,
+      status: 500,
+    });
     res.status(500).end();
   }
 });

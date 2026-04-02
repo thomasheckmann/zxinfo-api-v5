@@ -6,7 +6,24 @@ import { elasticClient, config } from "../common/elastic.js";
 
 const moduleId = "typeahead";
 const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
+const debugTrace = debugLib(`zxinfo-api-v5:${moduleId}:trace`);
+const debugError = debugLib(`zxinfo-api-v5:${moduleId}:error`);
 const router = express.Router();
+
+const formatLogValue = (value) => {
+    if (value === undefined || value === null) {
+        return "n/a";
+    }
+    const text = String(value);
+    return text.includes(" ") ? JSON.stringify(text) : text;
+};
+
+const logEvent = (logger, fields) => {
+    const message = Object.entries(fields)
+        .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+        .join(" ");
+    logger(message);
+};
 
 const validContexts = ["SOFTWARE", "HARDWARE", "BOOK", "MAGAZINE", "ENTITY", "GROUP", "LICENSE"];
 
@@ -22,17 +39,35 @@ const getTypeaheadSuggestions = (context, query, xrt) => {
     let expandedContext = context === "ALL" ? validContexts : context;
     const includeXrated = xrt === "1";
 
-    debug(`context: ${context}`);
-    debug(`includeXrated: ${includeXrated} (from xrt=${xrt})`);
+    logEvent(debugTrace, {
+        level: "trace",
+        event: "request.typeahead.context",
+        module: moduleId,
+        context,
+        includeXrated,
+        xrt,
+    });
 
     let contextFilter = {};
     if (!includeXrated) {
         expandedContext = context === "ALL" ? "ALL_false" : `${context}_false`;
         contextFilter = { genre_xrated: `${expandedContext}` };
-        debug(`expandedContext (HIDE xrated): ${expandedContext}`);
+        logEvent(debugTrace, {
+            level: "trace",
+            event: "request.typeahead.context.expanded",
+            module: moduleId,
+            mode: "hide_xrated",
+            expandedContext,
+        });
     } else {
         contextFilter = { genre: expandedContext };
-        debug(`expandedContext (SHOW xrated): ${expandedContext}`);
+        logEvent(debugTrace, {
+            level: "trace",
+            event: "request.typeahead.context.expanded",
+            module: moduleId,
+            mode: "show_xrated",
+            expandedContext,
+        });
     }
 
     return elasticClient.search({
@@ -62,7 +97,12 @@ const getTypeaheadSuggestions = (context, query, xrt) => {
 const prepareSuggestionsResponse = (result) => {
     const suggestions = [];
     const options = result?.suggest?.quick_suggest?.[0]?.options ?? [];
-    debug(`No of suggestions: ${options.length}`);
+    logEvent(debugTrace, {
+        level: "trace",
+        event: "request.typeahead.options",
+        module: moduleId,
+        total: options.length,
+    });
 
     for (const opt of options) {
         suggestions.push({
@@ -78,41 +118,103 @@ const prepareSuggestionsResponse = (result) => {
 };
 
 router.get("/typeahead/:context/:query", async (req, res) => {
-    debug("==> /typeahead/:context/:query");
+    logEvent(debug, {
+        level: "info",
+        event: "request.start",
+        module: moduleId,
+        route: "/typeahead/:context/:query",
+        method: req.method,
+        path: req.path,
+    });
     const context = req.params.context.trim();
     const query = req.params.query.trim();
 
-    debug(`\tcontext: ${context}`);
-    debug(`\tquery: ${query}`);
-    debug(`\txrt: ${req.query.xrt}`);
+    logEvent(debug, {
+        level: "info",
+        event: "request.validated.pending",
+        module: moduleId,
+        route: "/typeahead/:context/:query",
+        context,
+        queryLen: query.length,
+        xrt: req.query.xrt,
+    });
 
     if (!["ALL", ...validContexts].includes(context)) {
-        debug(`[INVALID] context: ${context}`);
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/typeahead/:context/:query",
+            errMessage: "Context is invalid",
+            context,
+            status: 422,
+        });
         return res.status(422).json({ error: "Context is invalid" });
     }
     if (query.length === 0) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/typeahead/:context/:query",
+            errMessage: "Query must not be empty",
+            status: 422,
+        });
         return res.status(422).json({ error: "Query must not be empty" });
     }
     if (query.length > 100) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/typeahead/:context/:query",
+            errMessage: "Query must not exceed 100 characters",
+            status: 422,
+        });
         return res.status(422).json({ error: "Query must not exceed 100 characters" });
     }
 
     try {
+        const startedAt = Date.now();
         const result = await getTypeaheadSuggestions(context, query, req.query.xrt);
-        debug(result);
 
         const total = result?.hits?.total?.value ?? 0;
         res.header("X-Total-Count", total);
-        res.send(prepareSuggestionsResponse(result));
+        const payload = prepareSuggestionsResponse(result);
+        logEvent(debug, {
+            level: "info",
+            event: "request.response.sent",
+            module: moduleId,
+            route: "/typeahead/:context/:query",
+            status: 200,
+            total,
+            returned: payload.length,
+            durationMs: Date.now() - startedAt,
+        });
+        res.send(payload);
     } catch (err) {
-        debug(`[FAILED] getTypeaheadSuggestions: ${err.message}`);
+        logEvent(debugError, {
+            level: "error",
+            event: "request.error",
+            module: moduleId,
+            route: "/typeahead/:context/:query",
+            errType: err.name,
+            errMessage: err.message,
+            status: 500,
+        });
         res.status(500).end();
     }
 });
 
 router.use((req, res, next) => {
-    debug(`TYPEAHEAD: ${req.path}`);
-    debug(`user-agent: ${req.headers["user-agent"]}`);
+    logEvent(debug, {
+        level: "info",
+        event: "module.middleware",
+        module: moduleId,
+        path: req.path,
+        method: req.method,
+        userAgent: req.headers["user-agent"],
+    });
     defaultRouter(moduleId, debug, req, res, next);
 });
 

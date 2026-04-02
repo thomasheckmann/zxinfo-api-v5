@@ -6,7 +6,24 @@ import { elasticClient, config } from "../common/elastic.js";
 
 const moduleId = "suggest";
 const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
+const debugTrace = debugLib(`zxinfo-api-v5:${moduleId}:trace`);
+const debugError = debugLib(`zxinfo-api-v5:${moduleId}:error`);
 const router = express.Router();
+
+const formatLogValue = (value) => {
+    if (value === undefined || value === null) {
+        return "n/a";
+    }
+    const text = String(value);
+    return text.includes(" ") ? JSON.stringify(text) : text;
+};
+
+const logEvent = (logger, fields) => {
+    const message = Object.entries(fields)
+        .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+        .join(" ");
+    logger(message);
+};
 
 /**
  * Returns only unique items from array `a`, comparing by property `param`.
@@ -173,65 +190,202 @@ const preparePublisherSuggestions = (result) => {
 };
 
 router.get("/suggest/:query", async (req, res) => {
-    debug("==> /suggest/:query");
+    logEvent(debug, {
+        level: "info",
+        event: "request.start",
+        module: moduleId,
+        route: "/suggest/:query",
+        method: req.method,
+        path: req.path,
+    });
     const query = req.params.query.trim();
     if (query.length === 0) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/suggest/:query",
+            errMessage: "Query must not be empty",
+            status: 422,
+        });
         return res.status(422).json({ error: "Query must not be empty" });
     }
     if (query.length > 100) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/suggest/:query",
+            errMessage: "Query must not exceed 100 characters",
+            status: 422,
+        });
         return res.status(422).json({ error: "Query must not exceed 100 characters" });
     }
     try {
+        const startedAt = Date.now();
         const result = await getSuggestions(query);
-        debug(result);
-        res.send(prepareSuggestions(result));
+        const payload = prepareSuggestions(result);
+        logEvent(debug, {
+            level: "info",
+            event: "request.response.sent",
+            module: moduleId,
+            route: "/suggest/:query",
+            status: 200,
+            total: payload.length,
+            durationMs: Date.now() - startedAt,
+        });
+        logEvent(debugTrace, {
+            level: "trace",
+            event: "request.suggest.meta",
+            module: moduleId,
+            titles: result?.suggest?.titles?.[0]?.options?.length ?? 0,
+            authors: result?.suggest?.authors?.[0]?.options?.length ?? 0,
+            publishers: result?.suggest?.publishers?.[0]?.options?.length ?? 0,
+        });
+        res.send(payload);
     } catch (err) {
-        debug(`[FAILED] getSuggestions: ${err.message}`);
+        logEvent(debugError, {
+            level: "error",
+            event: "request.error",
+            module: moduleId,
+            route: "/suggest/:query",
+            errType: err.name,
+            errMessage: err.message,
+            status: 500,
+        });
         res.status(500).end();
     }
 });
 
 router.get("/suggest/author/:name", async (req, res) => {
-    debug("==> /suggest/author/:name");
+    logEvent(debug, {
+        level: "info",
+        event: "request.start",
+        module: moduleId,
+        route: "/suggest/author/:name",
+        method: req.method,
+        path: req.path,
+    });
     const name = req.params.name.trim();
     if (name.length === 0) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/suggest/author/:name",
+            errMessage: "Name must not be empty",
+            status: 422,
+        });
         return res.status(422).json({ error: "Name must not be empty" });
     }
     if (name.length > 100) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/suggest/author/:name",
+            errMessage: "Name must not exceed 100 characters",
+            status: 422,
+        });
         return res.status(422).json({ error: "Name must not exceed 100 characters" });
     }
     try {
+        const startedAt = Date.now();
         const result = await getAuthorSuggestions(name);
-        debug(result);
-        res.send(prepareAuthorSuggestions(result));
+        const payload = prepareAuthorSuggestions(result);
+        logEvent(debug, {
+            level: "info",
+            event: "request.response.sent",
+            module: moduleId,
+            route: "/suggest/author/:name",
+            status: 200,
+            total: payload.length,
+            durationMs: Date.now() - startedAt,
+        });
+        res.send(payload);
     } catch (err) {
-        debug(`[FAILED] getAuthorSuggestions: ${err.message}`);
+        logEvent(debugError, {
+            level: "error",
+            event: "request.error",
+            module: moduleId,
+            route: "/suggest/author/:name",
+            errType: err.name,
+            errMessage: err.message,
+            status: 500,
+        });
         res.status(500).end();
     }
 });
 
 router.get("/suggest/publisher/:name", async (req, res) => {
-    debug("==> /suggest/publisher/:name");
+    logEvent(debug, {
+        level: "info",
+        event: "request.start",
+        module: moduleId,
+        route: "/suggest/publisher/:name",
+        method: req.method,
+        path: req.path,
+    });
     const name = req.params.name.trim();
     if (name.length === 0) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/suggest/publisher/:name",
+            errMessage: "Name must not be empty",
+            status: 422,
+        });
         return res.status(422).json({ error: "Name must not be empty" });
     }
     if (name.length > 100) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route: "/suggest/publisher/:name",
+            errMessage: "Name must not exceed 100 characters",
+            status: 422,
+        });
         return res.status(422).json({ error: "Name must not exceed 100 characters" });
     }
     try {
+        const startedAt = Date.now();
         const result = await getPublisherSuggestions(name);
-        debug(result);
-        res.send(preparePublisherSuggestions(result));
+        const payload = preparePublisherSuggestions(result);
+        logEvent(debug, {
+            level: "info",
+            event: "request.response.sent",
+            module: moduleId,
+            route: "/suggest/publisher/:name",
+            status: 200,
+            total: payload.length,
+            durationMs: Date.now() - startedAt,
+        });
+        res.send(payload);
     } catch (err) {
-        debug(`[FAILED] getPublisherSuggestions: ${err.message}`);
+        logEvent(debugError, {
+            level: "error",
+            event: "request.error",
+            module: moduleId,
+            route: "/suggest/publisher/:name",
+            errType: err.name,
+            errMessage: err.message,
+            status: 500,
+        });
         res.status(500).end();
     }
 });
 
 router.use((req, res, next) => {
-    debug(`SUGGEST: ${req.path}`);
-    debug(`user-agent: ${req.headers["user-agent"]}`);
+    logEvent(debug, {
+        level: "info",
+        event: "module.middleware",
+        module: moduleId,
+        path: req.path,
+        method: req.method,
+        userAgent: req.headers["user-agent"],
+    });
     defaultRouter(moduleId, debug, req, res, next);
 });
 

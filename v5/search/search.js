@@ -15,7 +15,24 @@ import { ZXSearchEntries } from "./helpersSearch.js";
 
 const moduleId = "search";
 const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
+const debugTrace = debugLib(`zxinfo-api-v5:${moduleId}:trace`);
+const debugError = debugLib(`zxinfo-api-v5:${moduleId}:error`);
 const router = express.Router();
+
+const formatLogValue = (value) => {
+    if (value === undefined || value === null) {
+        return "n/a";
+    }
+    const text = String(value);
+    return text.includes(" ") ? JSON.stringify(text) : text;
+};
+
+const logEvent = (logger, fields) => {
+    const message = Object.entries(fields)
+        .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+        .join(" ");
+    logger(message);
+};
 
 /**
  * Normalizes the requested page size to the supported search range.
@@ -42,13 +59,29 @@ const parseOffset = (rawOffset) => Math.max(0, parseInt(rawOffset, 10) || 0);
  * @param {import("express").Response} res - Express response used for validation errors.
  * @returns {string|null} Trimmed search term, or null if validation failed.
  */
-const validateSearchTerm = (value, res) => {
+const validateSearchTerm = (value, res, route) => {
     const searchTerm = value.trim();
     if (searchTerm.length === 0) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route,
+            errMessage: "Search term must not be empty",
+            status: 422,
+        });
         res.status(422).json({ error: "Search term must not be empty" });
         return null;
     }
     if (searchTerm.length > 200) {
+        logEvent(debugError, {
+            level: "error",
+            event: "request.validation.failed",
+            module: moduleId,
+            route,
+            errMessage: "Search term must not exceed 200 characters",
+            status: 422,
+        });
         res.status(422).json({ error: "Search term must not exceed 200 characters" });
         return null;
     }
@@ -65,7 +98,20 @@ const validateSearchTerm = (value, res) => {
  * @param {Object} args.query - Elasticsearch query body.
  * @param {Object} args.aggregationQuery - Elasticsearch aggregations definition.
  */
-const executeSearch = async ({ req, res, query, aggregationQuery }) => {
+const executeSearch = async ({ req, res, query, aggregationQuery, route }) => {
+    logEvent(debugTrace, {
+        level: "trace",
+        event: "request.search.dispatch",
+        module: moduleId,
+        route,
+        size: parsePageSize(req.query.size),
+        offset: parseOffset(req.query.offset),
+        sort: req.query.sort,
+        mode: req.query.mode,
+        includeAgg: req.query.includeagg,
+        output: req.query.output,
+    });
+
     await ZXSearchEntries(
         query,
         aggregationQuery,
@@ -96,8 +142,14 @@ const createBoostedQuery = (positive) => ({
 });
 
 router.use((req, res, next) => {
-    debug(`SEARCH: ${req.path}`);
-    debug(`user-agent: ${req.headers["user-agent"]}`);
+    logEvent(debug, {
+        level: "info",
+        event: "module.middleware",
+        module: moduleId,
+        path: req.path,
+        method: req.method,
+        userAgent: req.headers["user-agent"],
+    });
     defaultRouter(moduleId, debug, req, res, next);
 });
 
@@ -125,7 +177,14 @@ router.use((req, res, next) => {
  *   500 - Elasticsearch error
  */
 router.get("/search", async (req, res) => {
-    debug("==> /search [Empty/ALL]");
+    logEvent(debug, {
+        level: "info",
+        event: "request.start",
+        module: moduleId,
+        route: "/search",
+        method: req.method,
+        path: req.path,
+    });
 
     const filterQuery = createFilterQuery(req);
     const positiveQuery = {
@@ -144,6 +203,7 @@ router.get("/search", async (req, res) => {
         res,
         query: createBoostedQuery(positiveQuery),
         aggregationQuery: createAggregationQuery(req, positiveQuery),
+        route: "/search",
     });
 });
 
@@ -162,12 +222,27 @@ router.get("/search", async (req, res) => {
  *   500 - Elasticsearch error
  */
 router.get("/search/:searchterm", async (req, res) => {
-    debug(`==> /search [${req.params.searchterm}]`);
+    logEvent(debug, {
+        level: "info",
+        event: "request.start",
+        module: moduleId,
+        route: "/search/:searchterm",
+        method: req.method,
+        path: req.path,
+    });
 
-    const searchTerm = validateSearchTerm(req.params.searchterm, res);
+    const searchTerm = validateSearchTerm(req.params.searchterm, res, "/search/:searchterm");
     if (searchTerm === null) {
         return;
     }
+
+    logEvent(debug, {
+        level: "info",
+        event: "request.validated",
+        module: moduleId,
+        route: "/search/:searchterm",
+        searchTermLen: searchTerm.length,
+    });
 
     const filterQuery = createFilterQuery(req);
     const query = queryTermDefault(searchTerm, filterQuery);
@@ -188,6 +263,7 @@ router.get("/search/:searchterm", async (req, res) => {
         res,
         query: createBoostedQuery(positiveQuery),
         aggregationQuery: createAggregationQuery(req, positiveQuery),
+        route: "/search/:searchterm",
     });
 });
 
@@ -206,12 +282,27 @@ router.get("/search/:searchterm", async (req, res) => {
  *   500 - Elasticsearch error
  */
 router.get("/search/titles/:searchterm", async (req, res) => {
-    debug(`==> /search/titles [${req.params.searchterm}]`);
+    logEvent(debug, {
+        level: "info",
+        event: "request.start",
+        module: moduleId,
+        route: "/search/titles/:searchterm",
+        method: req.method,
+        path: req.path,
+    });
 
-    const searchTerm = validateSearchTerm(req.params.searchterm, res);
+    const searchTerm = validateSearchTerm(req.params.searchterm, res, "/search/titles/:searchterm");
     if (searchTerm === null) {
         return;
     }
+
+    logEvent(debug, {
+        level: "info",
+        event: "request.validated",
+        module: moduleId,
+        route: "/search/titles/:searchterm",
+        searchTermLen: searchTerm.length,
+    });
 
     const filterQuery = createFilterQuery(req);
     const query = queryTermTitlesOnly(searchTerm, filterQuery);
@@ -221,6 +312,7 @@ router.get("/search/titles/:searchterm", async (req, res) => {
         res,
         query: createBoostedQuery(query),
         aggregationQuery: createAggregationQuery(req, query),
+        route: "/search/titles/:searchterm",
     });
 });
 
@@ -239,12 +331,27 @@ router.get("/search/titles/:searchterm", async (req, res) => {
  *   500 - Elasticsearch error
  */
 router.get("/search/screens/:searchterm", async (req, res) => {
-    debug(`==> /search/screens [${req.params.searchterm}]`);
+    logEvent(debug, {
+        level: "info",
+        event: "request.start",
+        module: moduleId,
+        route: "/search/screens/:searchterm",
+        method: req.method,
+        path: req.path,
+    });
 
-    const searchTerm = validateSearchTerm(req.params.searchterm, res);
+    const searchTerm = validateSearchTerm(req.params.searchterm, res, "/search/screens/:searchterm");
     if (searchTerm === null) {
         return;
     }
+
+    logEvent(debug, {
+        level: "info",
+        event: "request.validated",
+        module: moduleId,
+        route: "/search/screens/:searchterm",
+        searchTermLen: searchTerm.length,
+    });
 
     const filterQuery = createFilterQuery(req);
     const query = queryTermScreenOnly(searchTerm, filterQuery);
@@ -254,6 +361,7 @@ router.get("/search/screens/:searchterm", async (req, res) => {
         res,
         query,
         aggregationQuery: createAggregationQuery(req, query),
+        route: "/search/screens/:searchterm",
     });
 });
 

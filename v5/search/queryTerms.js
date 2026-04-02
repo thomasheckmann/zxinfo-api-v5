@@ -3,6 +3,22 @@ import debugLib from "debug";
 const moduleId = "queryTerms";
 
 const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
+const debugTrace = debugLib(`zxinfo-api-v5:${moduleId}:trace`);
+
+const formatLogValue = (value) => {
+    if (value === undefined || value === null) {
+        return "n/a";
+    }
+    const text = String(value);
+    return text.includes(" ") ? JSON.stringify(text) : text;
+};
+
+const logEvent = (logger, fields) => {
+    const message = Object.entries(fields)
+        .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+        .join(" ");
+    logger(message);
+};
 
 /**
  * Builds the default weighted search query used by GET /search/:searchterm.
@@ -277,7 +293,13 @@ function queryTermNegativeBoost() {
  * @returns {Object} Elasticsearch bool filter or an empty object.
  */
 function createFilterItem(filterName, filterValues) {
-    debug(`createFilterItem(${filterName}, ${filterValues})`);
+    logEvent(debugTrace, {
+        level: "trace",
+        event: "query.filter.item.start",
+        module: moduleId,
+        filterName,
+        valuesCount: Array.isArray(filterValues) ? filterValues.length : (filterValues ? 1 : 0),
+    });
     var item_should = {};
 
     if (filterValues !== undefined && filterValues.length > 0) {
@@ -297,7 +319,13 @@ function createFilterItem(filterName, filterValues) {
 
         item_should = { bool: { should: should, minimum_should_match: 1 } };
     }
-    debug(`\t=> ${JSON.stringify(item_should)}`);
+    logEvent(debugTrace, {
+        level: "trace",
+        event: "query.filter.item.done",
+        module: moduleId,
+        filterName,
+        hasFilter: Object.keys(item_should).length > 0,
+    });
     return item_should;
 };
 
@@ -311,7 +339,13 @@ function createFilterItem(filterName, filterValues) {
  * @returns {Object} Elasticsearch bool filter or an empty object.
  */
 const createFilterItemPlayableType = function (filterName, filterValues) {
-    debug(`createFilterItemPlayableType(${filterName}, ${filterValues})`);
+    logEvent(debugTrace, {
+        level: "trace",
+        event: "query.filter.playable.start",
+        module: moduleId,
+        filterName,
+        valuesCount: Array.isArray(filterValues) ? filterValues.length : (filterValues ? 1 : 0),
+    });
     let item_should = {};
 
     if (filterValues !== undefined && filterValues.length > 0) {
@@ -358,7 +392,13 @@ const createFilterItemPlayableType = function (filterName, filterValues) {
 
         item_should = { bool: { should: should, minimum_should_match: 1 } };
     }
-    debug(JSON.stringify(item_should));
+    logEvent(debugTrace, {
+        level: "trace",
+        event: "query.filter.playable.done",
+        module: moduleId,
+        filterName,
+        hasFilter: Object.keys(item_should).length > 0,
+    });
     return item_should;
 };
 

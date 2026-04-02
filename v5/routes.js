@@ -3,6 +3,21 @@ const router = express.Router();
 import debugLib from "debug";
 const debug = debugLib("zxinfo-api-v5");
 
+const formatLogValue = (value) => {
+  if (value === undefined || value === null) {
+    return "n/a";
+  }
+  const text = String(value);
+  return text.includes(" ") ? JSON.stringify(text) : text;
+};
+
+const logEvent = (logger, fields) => {
+  const message = Object.entries(fields)
+    .map(([key, value]) => `${key}=${formatLogValue(value)}`)
+    .join(" ");
+  logger(message);
+};
+
 import filesearch from "./filesearch/filesearch.js";
 import entries from "./entries/entries.js";
 import search from "./search/search.js";
@@ -15,8 +30,14 @@ import typeahead from "./typeahead/typeahead.js";
  *
  ************************************************/
 router.use(function (req, res, next) {
-  debug(`API v5 got request - start processing, path: ${req.path}`);
-  debug(`user-agent: ${req.headers["user-agent"]}`);
+  logEvent(debug, {
+    level: "info",
+    event: "request.start",
+    module: "routes",
+    method: req.method,
+    path: req.path,
+    userAgent: req.headers["user-agent"],
+  });
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   // do logging
@@ -30,7 +51,14 @@ router.get("/search{/*path}", search);
 router.get("/typeahead/*path", typeahead);
 
 router.get("/*path", (req, res) => {
-  debug("[CATCH ALL]");
+  logEvent(debug, {
+    level: "info",
+    event: "request.catchall",
+    module: "routes",
+    method: req.method,
+    path: req.path,
+    status: 200,
+  });
   res.send("Hello World! api-v5 catch all - read more about this API here <link>: " + req.path);
 });
 
