@@ -4,6 +4,15 @@ const moduleId = "queryTerms";
 
 const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
 
+/**
+ * Builds the default weighted search query used by GET /search/:searchterm.
+ * Matches across title suggestions, exact titles, OCR text, releases, publishers, authors,
+ * and remarks to surface broad, relevance-ranked results.
+ *
+ * @param {string} searchTerm - Search text to match.
+ * @param {Object} filterObject - Filter query object assembled from request filters.
+ * @returns {Object} Elasticsearch query clause.
+ */
 function queryTermDefault(searchTerm, filterObject) {
     return {
         bool: {
@@ -153,6 +162,13 @@ function queryTermDefault(searchTerm, filterObject) {
     };
 }
 
+/**
+ * Builds a query limited to OCR and scanned screen text.
+ *
+ * @param {string} searchTerm - Search text to match.
+ * @param {Object} filterObject - Filter query object assembled from request filters.
+ * @returns {Object} Elasticsearch query clause.
+ */
 function queryTermScreenOnly(searchTerm, filterObject) {
     return {
         bool: {
@@ -166,7 +182,13 @@ function queryTermScreenOnly(searchTerm, filterObject) {
     }
 }
 
-// query term for searching titles only
+/**
+ * Builds a query limited to title-oriented fields.
+ *
+ * @param {string} searchTerm - Title text to match.
+ * @param {Object} filterObject - Filter query object assembled from request filters.
+ * @returns {Object} Elasticsearch query clause.
+ */
 function queryTermTitlesOnly(searchTerm, filterObject) {
     return {
         bool: {
@@ -211,7 +233,12 @@ function queryTermTitlesOnly(searchTerm, filterObject) {
     };
 }
 
-// query term to lower score (negative boost)
+/**
+ * Builds the negative side of the boosting query used to demote derivative,
+ * compilation, and covertape results without excluding them.
+ *
+ * @returns {Object} Elasticsearch query clause.
+ */
 function queryTermNegativeBoost() {
     return {
         bool: {
@@ -242,10 +269,12 @@ function queryTermNegativeBoost() {
 }
 
 /**
- * 
- * @param {*} filterName propertyName in JSON
- * @param {*} filterValues value to filter
- * @returns 
+ * Creates a reusable filter clause for one request parameter.
+ * Accepts either a single value or an array and converts it into a bool/should filter.
+ *
+ * @param {string} filterName - Indexed field name to filter.
+ * @param {string|string[]|undefined} filterValues - Incoming filter values.
+ * @returns {Object} Elasticsearch bool filter or an empty object.
  */
 function createFilterItem(filterName, filterValues) {
     debug(`createFilterItem(${filterName}, ${filterValues})`);
@@ -276,6 +305,10 @@ function createFilterItem(filterName, filterValues) {
  * Filter by playable type:
  * TOSEC - TZX & TAP
  * SC - tzx.zip & tzp.zip
+ *
+ * @param {string} filterName - Logical filter name from the request.
+ * @param {string|string[]|undefined} filterValues - Incoming TOSEC/playable type filters.
+ * @returns {Object} Elasticsearch bool filter or an empty object.
  */
 const createFilterItemPlayableType = function (filterName, filterValues) {
     debug(`createFilterItemPlayableType(${filterName}, ${filterValues})`);
@@ -329,6 +362,13 @@ const createFilterItemPlayableType = function (filterName, filterValues) {
     return item_should;
 };
 
+/**
+ * Collects all supported request filters into named Elasticsearch filter fragments.
+ * Group filters are translated from short request codes to the corresponding indexed field.
+ *
+ * @param {import("express").Request} req - Express request containing query parameters.
+ * @returns {Object<string, Object>} Map of logical filter names to filter clauses.
+ */
 function createFilterObjects(req) {
     var filterObjects = {}; // (name of ..), filter
 
@@ -417,6 +457,12 @@ function createFilterObjects(req) {
     return filterObjects;
 }
 
+/**
+ * Combines all non-empty request filter fragments into a single bool/must filter query.
+ *
+ * @param {import("express").Request} req - Express request containing query parameters.
+ * @returns {Object} Elasticsearch filter query.
+ */
 function createFilterQuery(req) {
     var filters = [];
     const filterObjects = createFilterObjects(req);
@@ -437,6 +483,15 @@ function createFilterQuery(req) {
 
 }
 
+/**
+ * Builds the aggregation tree returned when includeagg is enabled.
+ * Each aggregation applies the active search query and all active filters except its own,
+ * allowing facet counts to remain useful while filtering.
+ *
+ * @param {import("express").Request} req - Express request containing query parameters.
+ * @param {Object} query - The base positive search query.
+ * @returns {Object} Elasticsearch aggregation definition.
+ */
 function createAggregationQuery(req, query) {
     // debug(`createAggregationQuery: ${JSON.stringify(query, null, 2)}`);
     /**
