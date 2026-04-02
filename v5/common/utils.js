@@ -1,7 +1,7 @@
 import debugLib from "debug";
-import flatPkg from "flat";
+import * as flatPkg from "flat";
 
-const { flatten } = flatPkg;
+const flatten = flatPkg.flatten ?? flatPkg.default?.flatten;
 
 const debug = debugLib("zxinfo-api-v5:utils");
 
