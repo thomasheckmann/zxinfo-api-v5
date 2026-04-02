@@ -50,6 +50,20 @@ nvm use v22
 DEBUG=zxinfo-api* node node_modules/nodemon/bin/nodemon.js
 ```
 
+## Running tests
+
+Tests use the Node.js built-in test runner and make live HTTP requests against a running API instance.
+
+By default tests connect to `http://localhost:3000/v5`. Use the `API_ENDPOINT_URL` environment variable to point at a different host or port:
+
+```
+# default port
+npm test
+
+# custom port (e.g. when API_PORT=8400 in docker compose)
+API_ENDPOINT_URL=http://localhost:8400/v5 npm test
+```
+
 ## Production container hardening
 Use these runtime controls in addition to the hardened Dockerfile.
 
