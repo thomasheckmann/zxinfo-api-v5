@@ -24,7 +24,7 @@ router.use(function (req, res, next) {
 
 router.get("/filesearch/*path", filesearch);
 router.get("/suggest/*path", suggest);
-router.get("/search/*path", search);
+router.get("/search{/*path}", search);
 router.get("/typeahead/*path", typeahead);
 
 router.get("/*path", (req, res) => {
