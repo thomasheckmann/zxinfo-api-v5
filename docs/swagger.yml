@@ -13,6 +13,220 @@ tags:
   - name: "zxinfo"
     description: Search, suggestion, typeahead, and file-search endpoints
 paths:
+  /entries/{entryid}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get a single ZXDB entry by ID"
+      description: |
+        Returns a single ZXDB entry. The numeric ID is normalised to a zero-padded 7-digit string.
+      operationId: "getEntry"
+      parameters:
+        - name: entryid
+          in: path
+          description: Numeric ZXDB entry ID (up to 7 digits)
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/SearchMode'
+        - $ref: '#/components/parameters/EntryOutput'
+      responses:
+        200:
+          description: Entry document
+        400:
+          description: Invalid entry ID
+        404:
+          description: Entry not found
+        500:
+          description: Server error
+  /entries/byletter/{letter}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Browse entries by first letter"
+      description: |
+        Returns entries whose title starts with the given letter.
+        Use # to match titles that begin with a digit.
+      operationId: "entriesByLetter"
+      parameters:
+        - name: letter
+          in: path
+          description: Single letter (a-z, A-Z) or # for digit-prefixed titles
+          required: true
+          schema:
+            type: string
+            maxLength: 1
+        - $ref: '#/components/parameters/SearchMode'
+        - $ref: '#/components/parameters/SearchSize'
+        - $ref: '#/components/parameters/PageOffset'
+        - $ref: '#/components/parameters/SearchSort'
+        - $ref: '#/components/parameters/SearchOutput'
+        - $ref: '#/components/parameters/SearchExplain'
+        - $ref: '#/components/parameters/IncludeAggregations'
+        - $ref: '#/components/parameters/ContentType'
+        - $ref: '#/components/parameters/MachineType'
+        - $ref: '#/components/parameters/GenreType'
+        - $ref: '#/components/parameters/GenreSubType'
+        - $ref: '#/components/parameters/Control'
+        - $ref: '#/components/parameters/MultiplayerMode'
+        - $ref: '#/components/parameters/MultiplayerType'
+        - $ref: '#/components/parameters/XRated'
+        - $ref: '#/components/parameters/Availability'
+        - $ref: '#/components/parameters/Language'
+        - $ref: '#/components/parameters/Year'
+        - $ref: '#/components/parameters/TosecType'
+        - $ref: '#/components/parameters/Group'
+        - $ref: '#/components/parameters/GroupName'
+      responses:
+        200:
+          description: Matching entries
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/TotalCount'
+        500:
+          description: Server error
+  /entries/morelikethis/{entryid}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get entries similar to a given entry"
+      description: |
+        Returns entries with similar genre type, machine type, and content type to the given entry.
+      operationId: "moreLikeThis"
+      parameters:
+        - name: entryid
+          in: path
+          description: Numeric ZXDB entry ID to base similarity on
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/SearchMode'
+        - $ref: '#/components/parameters/SearchSize'
+        - $ref: '#/components/parameters/PageOffset'
+        - $ref: '#/components/parameters/SearchSort'
+        - $ref: '#/components/parameters/SearchOutput'
+        - $ref: '#/components/parameters/SearchExplain'
+        - $ref: '#/components/parameters/IncludeAggregations'
+      responses:
+        200:
+          description: Similar entries
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/TotalCount'
+        404:
+          description: Invalid entry ID
+        500:
+          description: Server error
+  /entries/byauthor/{name}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get entries by author or group name prefix"
+      operationId: "entriesByAuthor"
+      parameters:
+        - name: name
+          in: path
+          description: Author or group name prefix
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/SearchMode'
+        - $ref: '#/components/parameters/SearchSize'
+        - $ref: '#/components/parameters/PageOffset'
+        - $ref: '#/components/parameters/SearchSort'
+        - $ref: '#/components/parameters/SearchOutput'
+        - $ref: '#/components/parameters/SearchExplain'
+        - $ref: '#/components/parameters/IncludeAggregations'
+        - $ref: '#/components/parameters/ContentType'
+        - $ref: '#/components/parameters/MachineType'
+        - $ref: '#/components/parameters/GenreType'
+        - $ref: '#/components/parameters/GenreSubType'
+        - $ref: '#/components/parameters/Control'
+        - $ref: '#/components/parameters/MultiplayerMode'
+        - $ref: '#/components/parameters/MultiplayerType'
+        - $ref: '#/components/parameters/XRated'
+        - $ref: '#/components/parameters/Availability'
+        - $ref: '#/components/parameters/Language'
+        - $ref: '#/components/parameters/Year'
+        - $ref: '#/components/parameters/TosecType'
+        - $ref: '#/components/parameters/Group'
+        - $ref: '#/components/parameters/GroupName'
+      responses:
+        200:
+          description: Matching entries
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/TotalCount'
+        500:
+          description: Server error
+  /entries/bypublisher/{name}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get entries by publisher name prefix"
+      description: |
+        Searches both original publisher names and per-release publisher names.
+      operationId: "entriesByPublisher"
+      parameters:
+        - name: name
+          in: path
+          description: Publisher name prefix
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/SearchMode'
+        - $ref: '#/components/parameters/SearchSize'
+        - $ref: '#/components/parameters/PageOffset'
+        - $ref: '#/components/parameters/SearchSort'
+        - $ref: '#/components/parameters/SearchOutput'
+        - $ref: '#/components/parameters/SearchExplain'
+        - $ref: '#/components/parameters/IncludeAggregations'
+        - $ref: '#/components/parameters/ContentType'
+        - $ref: '#/components/parameters/MachineType'
+        - $ref: '#/components/parameters/GenreType'
+        - $ref: '#/components/parameters/GenreSubType'
+        - $ref: '#/components/parameters/Control'
+        - $ref: '#/components/parameters/MultiplayerMode'
+        - $ref: '#/components/parameters/MultiplayerType'
+        - $ref: '#/components/parameters/XRated'
+        - $ref: '#/components/parameters/Availability'
+        - $ref: '#/components/parameters/Language'
+        - $ref: '#/components/parameters/Year'
+        - $ref: '#/components/parameters/TosecType'
+        - $ref: '#/components/parameters/Group'
+        - $ref: '#/components/parameters/GroupName'
+      responses:
+        200:
+          description: Matching entries
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/TotalCount'
+        500:
+          description: Server error
+  /entries/random/{total}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get a random selection of software entries with screenshots"
+      operationId: "randomEntries"
+      parameters:
+        - name: total
+          in: path
+          description: Number of random entries to return
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: '#/components/parameters/SearchMode'
+        - $ref: '#/components/parameters/SearchOutput'
+      responses:
+        200:
+          description: Random entry documents
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/TotalCount'
+        500:
+          description: Server error
   /filesearch/{text}:
     get:
       tags:
@@ -432,6 +646,15 @@ components:
         type: string
         enum:
           - simple
+          - flat
+    EntryOutput:
+      name: output
+      in: query
+      description: Set to "flat" for key=value text output
+      required: false
+      schema:
+        type: string
+        enum:
           - flat
     SearchExplain:
       name: explain
