@@ -1,8 +1,7 @@
-"use strict";
+import debugLib from "debug";
 
 const moduleId = "queryTerms";
-
-var debug = require("debug")(`zxinfo-api-v5:${moduleId}`);
+const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
 
 function queryTermDefault(searchTerm, filterObject) {
     return {
@@ -489,11 +488,11 @@ function createAggregationQuery(req, query) {
 
 }
 
-module.exports = {
-    queryTermDefault: queryTermDefault,
-    queryTermTitlesOnly: queryTermTitlesOnly,
-    queryTermScreenOnly: queryTermScreenOnly,
-    queryTermNegativeBoost: queryTermNegativeBoost,
-    createFilterQuery: createFilterQuery,
-    createAggregationQuery: createAggregationQuery,
-}
+export {
+    queryTermDefault,
+    queryTermTitlesOnly,
+    queryTermScreenOnly,
+    queryTermNegativeBoost,
+    createFilterQuery,
+    createAggregationQuery,
+};
