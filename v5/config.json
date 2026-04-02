@@ -9,7 +9,7 @@
     "index_entries": "zxinfo"
   },
   "container": {
-    "es_host": "http://zxinfo-es-v8:9200",
+    "es_host": "http://zxinfo-es:9200",
     "es_path": "",
     "es_apiVersion": "8.17",
     "es_log": "debug",
@@ -18,7 +18,7 @@
     "index_entries": "zxinfo"
   },
   "production": {
-    "es_host": "http://zxinfo-es-v8:9200",
+    "es_host": "http://zxinfo-es:9200",
     "es_path": "",
     "es_apiVersion": "8.17",
     "es_log": "error",

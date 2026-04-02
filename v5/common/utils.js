@@ -5,10 +5,10 @@ const flatten = flatPkg.flatten ?? flatPkg.default?.flatten;
 
 const debug = debugLib("zxinfo-api-v5:utils");
 
-const default_mode = "compact";
-const default_size = 25;
-const default_offset = 0;
-const default_sort = "rel_desc";
+const DEFAULT_MODE = "compact";
+const DEFAULT_SIZE = 25;
+const DEFAULT_OFFSET = 0;
+const DEFAULT_SORT = "rel_desc";
 
 /**
  * sets default values, if they does not exists
@@ -19,32 +19,32 @@ const default_sort = "rel_desc";
  * - sort
  *
  */
-var setDefaultValuesModeSizeOffsetSort = function (q) {
+const setDefaultValuesModeSizeOffsetSort = (q) => {
   debug(`setDefaultValuesModeSizeOffsetSort`);
   if (!q.mode) {
-    debug(`setting mode=${default_mode}`);
-    q.mode = default_mode;
+    debug(`setting mode=${DEFAULT_MODE}`);
+    q.mode = DEFAULT_MODE;
   }
   if (!q.size) {
-    debug(`setting size=${default_size}`);
-    q.size = default_size;
+    debug(`setting size=${DEFAULT_SIZE}`);
+    q.size = DEFAULT_SIZE;
   }
   if (!q.offset) {
-    debug(`setting offset=${default_offset}`);
-    q.offset = default_offset;
+    debug(`setting offset=${DEFAULT_OFFSET}`);
+    q.offset = DEFAULT_OFFSET;
   }
   if (!q.sort) {
-    debug(`setting sort=${default_sort}`);
-    q.sort = default_sort;
+    debug(`setting sort=${DEFAULT_SORT}`);
+    q.sort = DEFAULT_SORT;
   }
   return q;
 };
 
-var setDefaultValueMode = function (q) {
+const setDefaultValueMode = (q) => {
   debug(`setDefaultValueMode`);
   if (!q.mode) {
-    debug(`setting mode=${default_mode}`);
-    q.mode = default_mode;
+    debug(`setting mode=${DEFAULT_MODE}`);
+    q.mode = DEFAULT_MODE;
   }
   return q;
 };
@@ -56,8 +56,8 @@ var setDefaultValueMode = function (q) {
 		* date_asc or date_desc   (sort by release date)
 		* rel_asc or rel_desc     (sort by relevance score)
 */
-var getSortObject = function (sort_mode) {
-  var sort_object;
+const getSortObject = (sort_mode) => {
+  let sort_object;
 
   if (sort_mode === "title_asc") {
     sort_object = [
@@ -140,14 +140,14 @@ var getSortObject = function (sort_mode) {
  * returns fields according to output mode for single item
  * @param {*} outputmode
  */
-var es_source_item = function (outputmode) {
+const es_source_item = (outputmode) => {
   debug(`es_source_item() : outputmode: ${outputmode}`);
-  if (outputmode == "full") {
+  if (outputmode === "full") {
     /* full output */
     return ["*"];
-  } else if (outputmode == "compact") {
+  } else if (outputmode === "compact") {
     /* compact output */
-    var source_includes = [
+    const source_includes = [
       "title",
       "xrated",
       "contentType",
@@ -190,7 +190,7 @@ var es_source_item = function (outputmode) {
       "screens",
     ];
     return source_includes;
-  } else if (outputmode == "tiny") {
+  } else if (outputmode === "tiny") {
     return [
       "title",
       "xrated",
@@ -217,14 +217,15 @@ var es_source_item = function (outputmode) {
  * @param {
  * } outputmode
  */
-var es_source_list = function (outputmode) {
+const es_source_list = (outputmode, includeAgg = false) => {
   debug(`es_source_list() : outputmode: ${outputmode}`);
-  if (outputmode == "full") {
+  debug(`es_source_list() : includeAgg: ${includeAgg}`);
+  if (outputmode === "full") {
     /* full output */
     return ["*"];
-  } else if (outputmode == "compact") {
+  } else if (outputmode === "compact") {
     /* compact output */
-    var source_includes = [
+    const source_includes = [
       "title",
       "xrated",
       "contentType",
@@ -247,7 +248,7 @@ var es_source_list = function (outputmode) {
       "screens",
     ];
     return source_includes;
-  } else if (outputmode == "tiny") {
+  } else if (outputmode === "tiny") {
     return [
       "title",
       "xrated",
@@ -267,7 +268,7 @@ var es_source_list = function (outputmode) {
       "additionalDownloads",
       "screens",
     ];
-  } else if (outputmode == "simple") {
+  } else if (outputmode === "simple") {
     return ["title"];
   }
 };
@@ -277,16 +278,12 @@ var es_source_list = function (outputmode) {
  * simple output format: {id. title}
  *
  */
-var renderSimpleOutput = function (r) {
+const renderSimpleOutput = (r) => {
   debug(`renderSimpleOutput() :`);
   debug(r);
 
-  var result = [];
-  for (var i = 0; r.hits.hits && i < r.hits.hits.length; i++) {
-    const item = r.hits.hits[i];
-    result.push({ id: item._id, title: item._source.title });
-  }
-  return result;
+  const hits = r?.hits?.hits ?? [];
+  return hits.map((item) => ({ id: item._id, title: item._source.title }));
 };
 
 /**
@@ -294,16 +291,16 @@ var renderSimpleOutput = function (r) {
  * flat output format: key=value
  *
  */
-var renderFlatOutputEntries = function (r) {
+const renderFlatOutputEntries = (r) => {
   debug(`renderFlatOutputEntries() :`);
   debug(r);
 
   const data = flatten(r);
   debug(`renderFlatOutputEntries()`);
   debug(data);
-  var result = "";
-  for (let [key, value] of Object.entries(data)) {
-    if (key.startsWith("hits.")) {
+  let result = "";
+  for (const [key, value] of Object.entries(data)) {
+    if (key.startsWith("hits.") || key.startsWith("aggregations.")) {
       result += key.replace("hits.", "").replace("_source.", "") + "=" + value + "\n";
       debug(`${key}: ${value}`);
     }
@@ -311,15 +308,15 @@ var renderFlatOutputEntries = function (r) {
   return result;
 };
 
-var renderFlatOutputEntry = function (r) {
+const renderFlatOutputEntry = (r) => {
   debug(`renderFlatOutputEntries() :`);
   debug(r);
 
   const data = flatten(r);
   debug(`renderFlatOutputEntries()`);
   debug(data);
-  var result = "";
-  for (let [key, value] of Object.entries(data)) {
+  let result = "";
+  for (const [key, value] of Object.entries(data)) {
     if (key.startsWith("_source.")) {
       result += key.replace("_source.", "") + "=" + value + "\n";
     }
@@ -328,83 +325,43 @@ var renderFlatOutputEntry = function (r) {
 };
 
 /** TODO: one section, not 3 - simplify */
-var renderMagazineLinks = function (r) {
-  function replaceMask(input, pattern, value) {
-    var result = input;
-    var found = input.match(pattern);
-    if (found != null) {
-      var template = found[0];
-      var padding = found[1];
-      var zero = ("0".repeat(padding) + value).slice(-padding);
-      if (padding == 1) {
+const renderMagazineLinks = (r) => {
+  const replaceMask = (input, pattern, value) => {
+    let result = input;
+    const found = input.match(pattern);
+    if (found !== null) {
+      const template = found[0];
+      const padding = found[1];
+      let zero = ("0".repeat(padding) + value).slice(-padding);
+      if (padding === "1") {
         // N = 1, plain value
         zero = value;
       }
-      var re = new RegExp(template, "g");
+      const re = new RegExp(template, "g");
       result = input.replace(re, zero);
     }
     return result;
-  }
+  };
 
-  var magazinereviews = r._source.magazinereview;
-
-  var i = 0;
-  for (; magazinereviews !== undefined && i < magazinereviews.length; i++) {
-    var link_mask = magazinereviews[i].link_mask;
-    if (link_mask != null) {
-      // console.log("BEFORE - ", link_mask);
-      link_mask = replaceMask(link_mask, /{i(\d)+}/i, magazinereviews[i].issueno);
-      link_mask = replaceMask(link_mask, /{v(\d)+}/i, magazinereviews[i].issuevolume);
-      link_mask = replaceMask(link_mask, /{y(\d)+}/i, magazinereviews[i].issueyear);
-      link_mask = replaceMask(link_mask, /{m(\d)+}/i, magazinereviews[i].issuemonth);
-      link_mask = replaceMask(link_mask, /{d(\d)+}/i, magazinereviews[i].issueday);
-      link_mask = replaceMask(link_mask, /{p(\d)+}/i, magazinereviews[i].pageno);
-      magazinereviews[i].path = link_mask;
-      delete magazinereviews[i].link_mask;
-      // console.log("AFTER - ", link_mask);
+  const applyLinkMask = (items) => {
+    for (const item of items ?? []) {
+      let link_mask = item.link_mask;
+      if (link_mask != null) {
+        link_mask = replaceMask(link_mask, /{i(\d)+}/i, item.issueno);
+        link_mask = replaceMask(link_mask, /{v(\d)+}/i, item.issuevolume);
+        link_mask = replaceMask(link_mask, /{y(\d)+}/i, item.issueyear);
+        link_mask = replaceMask(link_mask, /{m(\d)+}/i, item.issuemonth);
+        link_mask = replaceMask(link_mask, /{d(\d)+}/i, item.issueday);
+        link_mask = replaceMask(link_mask, /{p(\d)+}/i, item.pageno);
+        item.path = link_mask;
+        delete item.link_mask;
+      }
     }
-    r;
-  }
+  };
 
-  var magazineadverts = r._source.adverts;
-
-  var i = 0;
-  for (; magazineadverts !== undefined && i < magazineadverts.length; i++) {
-    var link_mask = magazineadverts[i].link_mask;
-    if (link_mask != null) {
-      // console.log("BEFORE - ", link_mask);
-      link_mask = replaceMask(link_mask, /{i(\d)+}/i, magazineadverts[i].issueno);
-      link_mask = replaceMask(link_mask, /{v(\d)+}/i, magazineadverts[i].issuevolume);
-      link_mask = replaceMask(link_mask, /{y(\d)+}/i, magazineadverts[i].issueyear);
-      link_mask = replaceMask(link_mask, /{m(\d)+}/i, magazineadverts[i].issuemonth);
-      link_mask = replaceMask(link_mask, /{d(\d)+}/i, magazineadverts[i].issueday);
-      link_mask = replaceMask(link_mask, /{p(\d)+}/i, magazineadverts[i].pageno);
-      magazineadverts[i].path = link_mask;
-      delete magazineadverts[i].link_mask;
-      // console.log("AFTER - ", link_mask);
-    }
-    r;
-  }
-
-  var magazinerefs = r._source.magrefs;
-
-  var i = 0;
-  for (; magazinerefs !== undefined && i < magazinerefs.length; i++) {
-    var link_mask = magazinerefs[i].link_mask;
-    if (link_mask != null) {
-      // console.log("BEFORE - ", link_mask);
-      link_mask = replaceMask(link_mask, /{i(\d)+}/i, magazinerefs[i].issueno);
-      link_mask = replaceMask(link_mask, /{v(\d)+}/i, magazinerefs[i].issuevolume);
-      link_mask = replaceMask(link_mask, /{y(\d)+}/i, magazinerefs[i].issueyear);
-      link_mask = replaceMask(link_mask, /{m(\d)+}/i, magazinerefs[i].issuemonth);
-      link_mask = replaceMask(link_mask, /{d(\d)+}/i, magazinerefs[i].issueday);
-      link_mask = replaceMask(link_mask, /{p(\d)+}/i, magazinerefs[i].pageno);
-      magazinerefs[i].path = link_mask;
-      delete magazinerefs[i].link_mask;
-      // console.log("AFTER - ", link_mask);
-    }
-    r;
-  }
+  applyLinkMask(r._source.magazinereview);
+  applyLinkMask(r._source.adverts);
+  applyLinkMask(r._source.magrefs);
 
   return r;
 };
