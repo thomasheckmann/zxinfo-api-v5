@@ -6,7 +6,6 @@ const debug = debugLib("zxinfo-api-v5");
 import filesearch from "./filesearch/filesearch.js";
 import suggest from "./suggest/suggest.js";
 import typeahead from "./typeahead/typeahead.js";
-import search from "./search/search.js";
 
 /************************************************
  *
@@ -25,7 +24,6 @@ router.use(function (req, res, next) {
 router.get("/filesearch/*path", filesearch);
 router.get("/suggest/*path", suggest);
 router.get("/typeahead/*path", typeahead);
-router.get("/search/*path", search);
 
 router.get("/*path", (req, res) => {
   debug("[CATCH ALL]");
