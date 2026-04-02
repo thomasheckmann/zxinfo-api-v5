@@ -71,7 +71,7 @@ router.get("/entries/:entryid", async (req, res) => {
       }
     } catch (reason) {
       debug(`[FAILED] reason: ${reason.message}`);
-      res.status(reason.message === "Not Found" ? 404 : 500).end();
+      res.status(reason.statusCode === 404 ? 404 : 500).end();
     }
   } else {
     res.status(400).end();
