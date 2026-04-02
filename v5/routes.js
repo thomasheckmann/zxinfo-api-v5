@@ -1,19 +1,10 @@
-"use strict";
+import express from "express";
+const router = express.Router();
+import debugLib from "debug";
+const debug = debugLib("zxinfo-api-v5");
 
-var express = require("express");
-var router = express.Router();
-var debug = require("debug")("zxinfo-api-v5");
-
-const metadata = require("./metadata/metadata");
-
-const typeahead = require("./typeahead/typeahead");
-const filecheck = require("./filecheck/filecheck");
-const filesearch = require("./filesearch/filesearch");
-
-const entries = require("./entries/entries");
-const suggest = require("./suggest/suggest");
-const search = require("./search/search");
-const magazines = require("./magazines/magazines");
+import filesearch from "./filesearch/filesearch.js";
+import suggest from "./suggest/suggest.js";
 
 /************************************************
  *
@@ -29,20 +20,12 @@ router.use(function (req, res, next) {
   next(); // make sure we go to the next routes and don't stop here
 });
 
-router.get("/metadata", metadata);
+router.get("/filesearch/*path", filesearch);
+router.get("/suggest/*path", suggest);
 
-router.get("/typeahead/:context/:query", typeahead);
-router.get("/filecheck/*", filecheck);
-router.get("/filesearch/*", filesearch);
-
-router.get("/entries/*", entries);
-router.get("/suggest/*", suggest);
-router.get("/search/*", search);
-router.get("/magazines/*", magazines);
-
-router.get("*", (req, res) => {
+router.get("/*path", (req, res) => {
   debug("[CATCH ALL]");
   res.send("Hello World! api-v5 catch all - read more about this API here <link>: " + req.path);
 });
 
-module.exports = router;
+export default router;

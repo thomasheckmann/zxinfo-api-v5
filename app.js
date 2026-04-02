@@ -1,12 +1,14 @@
-const express = require("express");
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
+import express from "express";
 const app = express();
 
 // Use environment variable or default to port 3000
 const port = process.env.PORT || 3000;
 
 // Import the router
-const routes = require("./v5/routes");
-const zx_routes = require("./v5/zx_routes");
+import routes from "./v5/routes.js";
 const appConfig = require("./v5/config.json");
 
 if (process.env.NODE_ENV === undefined) {
@@ -26,7 +28,6 @@ console.log("#");
 
 // Use the router for all paths starting with '/'
 app.use("/v5", routes);
-app.use("/zx", zx_routes);
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

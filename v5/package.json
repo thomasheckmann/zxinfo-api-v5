@@ -1,0 +1,19 @@
+{
+  "name": "zxinfo-api-v5",
+  "version": "5.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.19.1",
+    "@elastic/transport": "^8.10.0",
+    "debug": "^4.4.3",
+    "express": "^5.2.1",
+    "flat": "^6.0.1"
+  }
+}

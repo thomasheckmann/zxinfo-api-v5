@@ -1,0 +1,15 @@
+*
+
+!Dockerfile
+!app.js
+!package.json
+!package-lock.json
+!v5
+!v5/**
+!es-import
+!es-import/*.txt
+!es-import/package.json
+!es-import/package-lock.json
+!es-import/import_zxinfo.sh
+!es-import/import_magazines.sh
+!es-import/import_search.sh

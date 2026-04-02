@@ -1,7 +1,7 @@
-"use strict";
+import debugLib from "debug";
+import { flatten } from "flat";
 
-const debug = require("debug")("zxinfo-api-v5:utils");
-const {flatten} = require("flat");
+const debug = debugLib("zxinfo-api-v5:utils");
 
 const default_mode = "compact";
 const default_size = 25;
@@ -407,14 +407,14 @@ var renderMagazineLinks = function (r) {
   return r;
 };
 
-module.exports = {
-  es_source_item: es_source_item,
-  es_source_list: es_source_list,
-  renderSimpleOutput: renderSimpleOutput,
-  renderFlatOutputEntries: renderFlatOutputEntries,
-  renderFlatOutputEntry: renderFlatOutputEntry,
-  getSortObject: getSortObject,
-  renderMagazineLinks: renderMagazineLinks,
-  setDefaultValuesModeSizeOffsetSort: setDefaultValuesModeSizeOffsetSort,
-  setDefaultValueMode: setDefaultValueMode,
+export {
+  es_source_item,
+  es_source_list,
+  renderSimpleOutput,
+  renderFlatOutputEntries,
+  renderFlatOutputEntry,
+  getSortObject,
+  renderMagazineLinks,
+  setDefaultValuesModeSizeOffsetSort,
+  setDefaultValueMode,
 };

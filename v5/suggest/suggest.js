@@ -1,303 +1,238 @@
-const moduleId = "suggest";
-const debug = require("debug")(`zxinfo-api-v5:${moduleId}`);
+import debugLib from "debug";
+import express from "express";
 
-const express = require("express");
+import { defaultRouter } from "../common/helpersRequest.js";
+import { elasticClient, config } from "../common/elastic.js";
+
+const moduleId = "suggest";
+const debug = debugLib(`zxinfo-api-v5:${moduleId}`);
 const router = express.Router();
 
-const tools = require("../common/utils");
-const queryHelper = require("../common/queryTerms");
-const search = require("../common/helpersSearch");
-const helpers = require("../common/helpersRequest");
+/**
+ * Returns only unique items from array `a`, comparing by property `param`.
+ *
+ * @param {Object[]} a - Array to deduplicate.
+ * @param {string} param - Property name to compare uniqueness on.
+ */
+function uniq(a, param) {
+    return a.filter((item, pos, array) =>
+        array.map((mapItem) => mapItem[param]).indexOf(item[param]) === pos
+    );
+}
 
-const { elasticClient, config, isDevelopment } = require("../common/elastic");
-
-/* GET title suggestions for completion (all) */
-var getSuggestions = function (query) {
-    return elasticClient.search({
+/**
+ * Queries Elasticsearch completion suggesters for titles, authors, and publishers
+ * matching the given query string.
+ *
+ * @param {string} query - Partial text to complete.
+ */
+const getSuggestions = (query) =>
+    elasticClient.search({
         index: config.index_entries,
         body: {
             suggest: {
                 text: query,
-                titles: {
-                    completion: {
-                        field: "titlesuggest",
-                        skip_duplicates: true,
-                        size: 8,
-                    },
-                },
-                authors: {
-                    completion: {
-                        field: "authorsuggest",
-                        skip_duplicates: true,
-                        size: 8,
-                    },
-                },
-                publishers: {
-                    completion: {
-                        field: "publishersuggest",
-                        skip_duplicates: false,
-                        size: 10,
-                    },
-                },
+                titles: { completion: { field: "titlesuggest", skip_duplicates: true, size: 8 } },
+                authors: { completion: { field: "authorsuggest", skip_duplicates: true, size: 8 } },
+                publishers: { completion: { field: "publishersuggest", skip_duplicates: false, size: 10 } },
             },
         },
     });
-};
 
-var prepareSuggestions = function (result) {
-    function uniq(a, param) {
-        return a.filter(function (item, pos, array) {
-            return (
-                array
-                    .map(function (mapItem) {
-                        return mapItem[param];
-                    })
-                    .indexOf(item[param]) === pos
-            );
-        });
-    }
-
-    var suggestons = [];
-
-    // iterate titles
-    var i = 0;
-    for (; i < result.suggest.titles[0].options.length; i++) {
-        var item = {
-            text: result.suggest.titles[0].options[i]._source.title,
-            labeltype: "",
-            type: result.suggest.titles[0].options[i]._source.contentType,
-            entry_id: result.suggest.titles[0].options[i]._id,
-        };
-        suggestons.push(item);
-    }
-
-    // iterate authors
-    var aut_suggestions = [];
-    var j = 0;
-    for (; j < result.suggest.authors[0].options.length; j++) {
-        var names = result.suggest.authors[0].options[j]._source.metadata_author;
-        var text = result.suggest.authors[0].options[j].text;
-
-        var output = text;
-        var t = 0;
-        for (; t < names.length; t++) {
-            if (names[t].alias.indexOf(text) > -1) {
-                output = names[t].name;
-                labeltype = names[t].labeltype == null ? "" : names[t].labeltype;
-            }
-        }
-        var item = { text: output, labeltype: labeltype, type: "AUTHOR" };
-        aut_suggestions.push(item);
-    }
-
-    var pub_suggestions = [];
-    var j = 0;
-    for (; j < result.suggest.publishers[0].options.length; j++) {
-        var names = result.suggest.publishers[0].options[j]._source.metadata_publisher;
-        var text = result.suggest.publishers[0].options[j].text;
-        var name = text;
-        var labeltype;
-        var t = 0;
-
-        for (; t < names.length; t++) {
-            if (names[t].suggest.indexOf(text) > -1) {
-                name = names[t].name;
-                labeltype = names[t].labeltype == null ? "" : names[t].labeltype;
-            }
-        }
-        var item = { text: name, labeltype: labeltype, type: "PUBLISHER" };
-        pub_suggestions.push(item);
-    }
-    aut_suggestions = uniq(aut_suggestions, "text");
-    pub_suggestions = uniq(pub_suggestions, "text");
-
-    suggestons.push.apply(suggestons, aut_suggestions);
-    suggestons.push.apply(suggestons, pub_suggestions);
-
-    // sort
-    suggestons.sort(function (a, b) {
-        return a.output - b.output;
-    });
-
-    return suggestons;
-};
-
-var getAuthorSuggestions = function (name) {
-    return elasticClient.search({
-        index: config.index_entries,
-        body: {
-            suggest: {
-                text: name,
-                authors: {
-                    completion: {
-                        field: "authorsuggest",
-                        skip_duplicates: true,
-                        size: 10,
-                    },
-                },
-            },
-        },
-    });
-};
-
-var prepareAuthorSuggestions = function (result) {
-    var suggestons = [];
-
-    function uniq(a, param) {
-        return a.filter(function (item, pos, array) {
-            return (
-                array
-                    .map(function (mapItem) {
-                        return mapItem[param];
-                    })
-                    .indexOf(item[param]) === pos
-            );
-        });
-    }
-    // iterate authors
-    var suggestons = [];
-    var j = 0;
-    for (; j < result.suggest.authors[0].options.length; j++) {
-        var names = result.suggest.authors[0].options[j]._source.metadata_author;
-        var text = result.suggest.authors[0].options[j].text;
-        var labeltype;
-
-        var output = text;
-        var t = 0;
-
-        for (; t < names.length; t++) {
-            if (names[t].alias.indexOf(text) > -1) {
-                output = names[t].name;
-                labeltype = names[t].labeltype == null ? "" : names[t].labeltype;
-            }
-        }
-        var item = { text: output, labeltype: labeltype };
-        suggestons.push(item);
-    }
-    // sort
-    suggestons.sort(function (a, b) {
-        return a.output - b.output;
-    });
-    suggestons = uniq(suggestons, "text");
-
-    return suggestons;
-};
-
-var getPublisherSuggestions = function (name) {
-    return elasticClient.search({
-        index: config.index_entries,
-        body: {
-            suggest: {
-                text: name,
-                publishers: {
-                    completion: {
-                        field: "publishersuggest",
-                        skip_duplicates: false,
-                        size: 10,
-                    },
-                },
-            },
-        },
-    });
-};
-
-var preparePublisherSuggestions = function (result) {
-    var suggestons = [];
-    function uniq(a, param) {
-        return a.filter(function (item, pos, array) {
-            return (
-                array
-                    .map(function (mapItem) {
-                        return mapItem[param];
-                    })
-                    .indexOf(item[param]) === pos
-            );
-        });
-    }
-    // iterate publishers
-    var suggestons = [];
-    var j = 0;
-    for (; j < result.suggest.publishers[0].options.length; j++) {
-        var names = result.suggest.publishers[0].options[j]._source.metadata_publisher;
-        var text = result.suggest.publishers[0].options[j].text;
-        var name = text;
-        var labeltype;
-        var t = 0;
-
-        for (; t < names.length; t++) {
-            if (names[t].suggest.indexOf(text) > -1) {
-                name = names[t].name;
-                labeltype = names[t].labeltype == null ? "" : names[t].labeltype;
-            }
-        }
-        var item = { text: name, labeltype: labeltype };
-        suggestons.push(item);
-    }
-    // sort
-    suggestons.sort(function (a, b) {
-        return a.output - b.output;
-    });
-    suggestons = uniq(suggestons, "text");
-
-    return suggestons;
-};
-
-/* GET title suggestions for completion (all) */
 /**
- * Return title suggestions for completion (all)
- * 
- * OK:
- * curl "http://localhost:3000/v5/suggest/Head" | jq .
- * 
- * NOT OK: (invalid ID)
- * curl -s -D - "http://localhost:3000/v5/entries/002259x"
- * 
- * NOT FOUND:
- * curl -s -D - "http://localhost:3000/v5/entries/1231231"
- * 
- * RETURNS:
- * 200: OK
- * 404: Not Found (ID not found)
- * 422: Invalid Input (ID is invalid)
- * 500: Server error
+ * Transforms raw Elasticsearch completion results into a flat, sorted suggestion list
+ * combining titles (with entry_id/type), authors, and publishers.
+ * Deduplicates authors and publishers by display text.
+ *
+ * @param {Object} result - Raw Elasticsearch response.
+ * @returns {Object[]} Combined and deduplicated suggestion items.
  */
-router.get("/suggest/:query", function (req, res, next) {
+const prepareSuggestions = (result) => {
+    const suggestions = [];
+
+    for (const opt of result.suggest.titles[0].options) {
+        suggestions.push({
+            text: opt._source.title,
+            labeltype: "",
+            type: opt._source.contentType,
+            entry_id: opt._id,
+        });
+    }
+
+    let autSuggestions = result.suggest.authors[0].options.map((opt) => {
+        const names = opt._source.metadata_author;
+        let output = opt.text;
+        let labeltype = "";
+        for (const n of names) {
+            if (n.alias.indexOf(opt.text) > -1) {
+                output = n.name;
+                labeltype = n.labeltype ?? "";
+            }
+        }
+        return { text: output, labeltype, type: "AUTHOR" };
+    });
+
+    let pubSuggestions = result.suggest.publishers[0].options.map((opt) => {
+        const names = opt._source.metadata_publisher;
+        let name = opt.text;
+        let labeltype = "";
+        for (const n of names) {
+            if (n.suggest.indexOf(opt.text) > -1) {
+                name = n.name;
+                labeltype = n.labeltype ?? "";
+            }
+        }
+        return { text: name, labeltype, type: "PUBLISHER" };
+    });
+
+    autSuggestions = uniq(autSuggestions, "text");
+    pubSuggestions = uniq(pubSuggestions, "text");
+    suggestions.push(...autSuggestions, ...pubSuggestions);
+    suggestions.sort((a, b) => a.output - b.output);
+    return suggestions;
+};
+
+/**
+ * Queries the author completion suggester for names starting with the given prefix.
+ *
+ * @param {string} name - Partial author name to complete.
+ */
+const getAuthorSuggestions = (name) =>
+    elasticClient.search({
+        index: config.index_entries,
+        body: {
+            suggest: {
+                text: name,
+                authors: { completion: { field: "authorsuggest", skip_duplicates: true, size: 10 } },
+            },
+        },
+    });
+
+/**
+ * Resolves raw author completion results to canonical author names,
+ * matching against known aliases. Deduplicates and sorts the output.
+ *
+ * @param {Object} result - Raw Elasticsearch response.
+ * @returns {Object[]} Deduplicated list of { text, labeltype } author suggestions.
+ */
+const prepareAuthorSuggestions = (result) => {
+    const suggestions = result.suggest.authors[0].options.map((opt) => {
+        const names = opt._source.metadata_author;
+        let output = opt.text;
+        let labeltype = "";
+        for (const n of names) {
+            if (n.alias.indexOf(opt.text) > -1) {
+                output = n.name;
+                labeltype = n.labeltype ?? "";
+            }
+        }
+        return { text: output, labeltype };
+    });
+    suggestions.sort((a, b) => a.output - b.output);
+    return uniq(suggestions, "text");
+};
+
+/**
+ * Queries the publisher completion suggester for names starting with the given prefix.
+ *
+ * @param {string} name - Partial publisher name to complete.
+ */
+const getPublisherSuggestions = (name) =>
+    elasticClient.search({
+        index: config.index_entries,
+        body: {
+            suggest: {
+                text: name,
+                publishers: { completion: { field: "publishersuggest", skip_duplicates: false, size: 10 } },
+            },
+        },
+    });
+
+/**
+ * Resolves raw publisher completion results to canonical publisher names,
+ * matching against known suggest aliases. Deduplicates and sorts the output.
+ *
+ * @param {Object} result - Raw Elasticsearch response.
+ * @returns {Object[]} Deduplicated list of { text, labeltype } publisher suggestions.
+ */
+const preparePublisherSuggestions = (result) => {
+    const suggestions = result.suggest.publishers[0].options.map((opt) => {
+        const names = opt._source.metadata_publisher;
+        let name = opt.text;
+        let labeltype = "";
+        for (const n of names) {
+            if (n.suggest.indexOf(opt.text) > -1) {
+                name = n.name;
+                labeltype = n.labeltype ?? "";
+            }
+        }
+        return { text: name, labeltype };
+    });
+    suggestions.sort((a, b) => a.output - b.output);
+    return uniq(suggestions, "text");
+};
+
+router.get("/suggest/:query", async (req, res) => {
     debug("==> /suggest/:query");
-    getSuggestions(req.params.query).then(function (result) {
-        debug(`########### RESPONSE from getSuggestions(${req.params.query})`);
+    const query = req.params.query.trim();
+    if (query.length === 0) {
+        return res.status(422).json({ error: "Query must not be empty" });
+    }
+    if (query.length > 100) {
+        return res.status(422).json({ error: "Query must not exceed 100 characters" });
+    }
+    try {
+        const result = await getSuggestions(query);
         debug(result);
-        debug(`#############################################################`);
         res.send(prepareSuggestions(result));
-    });
+    } catch (err) {
+        debug(`[FAILED] getSuggestions: ${err.message}`);
+        res.status(500).end();
+    }
 });
 
-/* GET suggestions for AUTHOR names */
-router.get("/suggest/author/:name", function (req, res, next) {
-    debug("==> /suggest/authors/:name");
-    getAuthorSuggestions(req.params.name).then(function (result) {
-        debug(`########### RESPONSE from getAuthorSuggestions(${req.params.name})`);
+router.get("/suggest/author/:name", async (req, res) => {
+    debug("==> /suggest/author/:name");
+    const name = req.params.name.trim();
+    if (name.length === 0) {
+        return res.status(422).json({ error: "Name must not be empty" });
+    }
+    if (name.length > 100) {
+        return res.status(422).json({ error: "Name must not exceed 100 characters" });
+    }
+    try {
+        const result = await getAuthorSuggestions(name);
         debug(result);
-        debug(`#############################################################`);
         res.send(prepareAuthorSuggestions(result));
-    });
+    } catch (err) {
+        debug(`[FAILED] getAuthorSuggestions: ${err.message}`);
+        res.status(500).end();
+    }
 });
 
-/* GET suggestions for PUBLISHER names */
-router.get("/suggest/publisher/:name", function (req, res, next) {
-    debug("==> /publisher/:name");
-    getPublisherSuggestions(req.params.name).then(function (result) {
-        debug(`########### RESPONSE from getPublisherSuggestions(${req.params.name})`);
+router.get("/suggest/publisher/:name", async (req, res) => {
+    debug("==> /suggest/publisher/:name");
+    const name = req.params.name.trim();
+    if (name.length === 0) {
+        return res.status(422).json({ error: "Name must not be empty" });
+    }
+    if (name.length > 100) {
+        return res.status(422).json({ error: "Name must not exceed 100 characters" });
+    }
+    try {
+        const result = await getPublisherSuggestions(name);
         debug(result);
-        debug(`#############################################################`);
         res.send(preparePublisherSuggestions(result));
-    });
+    } catch (err) {
+        debug(`[FAILED] getPublisherSuggestions: ${err.message}`);
+        res.status(500).end();
+    }
 });
 
-router.use(function (req, res, next) {
+router.use((req, res, next) => {
     debug(`SUGGEST: ${req.path}`);
     debug(`user-agent: ${req.headers["user-agent"]}`);
-
-    helpers.defaultRouter(moduleId, debug, req, res, next);
+    defaultRouter(moduleId, debug, req, res, next);
 });
 
-module.exports = router;
+export default router;
