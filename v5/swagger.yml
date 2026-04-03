@@ -260,6 +260,39 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         500:
           description: Server error
+  /filecheck/{hash}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Lookup ZXDB entry by file hash"
+      description: |
+        Lookup a ZXDB entry by MD5 (32-char) or SHA-512 (128-char) file hash.
+        Returns the associated entry along with the matching file hashes.
+      operationId: "fileCheck"
+      parameters:
+        - name: hash
+          in: path
+          description: File hash (MD5 32-char or SHA-512 128-char hex string)
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{32}|[a-fA-F0-9]{128}$'
+          required: true
+      responses:
+        200:
+          description: Entry with matching file hash
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/TotalCount'
+        404:
+          description: No entry found with this hash
+        422:
+          description: Invalid hash format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: Server error
   /suggest/{query}:
     get:
       tags:
