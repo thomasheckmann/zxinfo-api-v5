@@ -20,6 +20,7 @@ const logEvent = (logger, fields) => {
 
 import filesearch from "./filesearch/filesearch.js";
 import entries from "./entries/entries.js";
+import filecheck from "./filecheck/filecheck.js";
 import search from "./search/search.js";
 import suggest from "./suggest/suggest.js";
 import typeahead from "./typeahead/typeahead.js";
@@ -45,6 +46,7 @@ router.use(function (req, res, next) {
 });
 
 router.get("/filesearch/*path", filesearch);
+router.get("/filecheck/*path", filecheck);
 router.get("/entries{/*path}", entries);
 router.get("/suggest/*path", suggest);
 router.get("/search{/*path}", search);
