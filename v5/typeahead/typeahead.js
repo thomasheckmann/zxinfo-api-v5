@@ -10,6 +10,22 @@ const debugTrace = debugLib(`zxinfo-api-v5:${moduleId}:trace`);
 const debugError = debugLib(`zxinfo-api-v5:${moduleId}:error`);
 const router = express.Router();
 
+// constans for machinetype
+const ZXSPECTRUM = [
+    "ZX-Spectrum 128 +2",
+    "ZX-Spectrum 128 +2A/+3",
+    "ZX-Spectrum 128 +2B",
+    "ZX-Spectrum 128 +3",
+    "ZX-Spectrum 128K",
+    "ZX-Spectrum 128K (load in USR0 mode)",
+    "ZX-Spectrum 16K",
+    "ZX-Spectrum 16K/48K",
+    "ZX-Spectrum 48K",
+    "ZX-Spectrum 48K/128K",
+];
+const ZX81 = ["ZX81 64K", "ZX81 32K", "ZX81 2K", "ZX81 1K", "ZX81 16K"];
+const PENTAGON = ["Scorpion", "Pentagon 128"];
+
 const formatLogValue = (value) => {
     if (value === undefined || value === null) {
         return "n/a";
@@ -78,7 +94,7 @@ const getTypeaheadSuggestions = (context, query, xrt) => {
                     prefix: query,
                     completion: {
                         field: "title",
-                        size: 15,
+                        size: 100,
                         analyzer: "standard",
                         contexts: contextFilter,
                     },
@@ -94,25 +110,41 @@ const getTypeaheadSuggestions = (context, query, xrt) => {
  * @param {Object} result - Raw Elasticsearch response.
  * @returns {Object[]} Typeahead suggestion entries.
  */
-const prepareSuggestionsResponse = (result) => {
+const prepareSuggestionsResponse = (result, mTypes) => {
     const suggestions = [];
     const options = result?.suggest?.quick_suggest?.[0]?.options ?? [];
-    logEvent(debugTrace, {
+    logEvent(debug, {
         level: "trace",
         event: "request.typeahead.options",
         module: moduleId,
         total: options.length,
+        filterMachineTypes: mTypes.join(","),
+        len: mTypes.length,
     });
 
     for (const opt of options) {
-        suggestions.push({
-            comment: opt._source.comment,
-            type: opt._source.type,
-            id: opt._source.id,
-            name: opt._source.fulltitle,
-            entry_seo: opt._source.entry_seo,
-            xrated: opt._source.xrated,
-        });
+        // filter out if machinetype filter is applied and entry doesn't match
+        if (mTypes.length > 0 && !mTypes.includes(opt._source.machineType)) {
+            logEvent(debug, {
+                level: "trace",
+                event: "request.typeahead.options.filtered_out",
+                module: moduleId,
+                entryId: opt._source.id,
+                entryMachineType: opt._source.machineType,
+                filterMachineTypes: mTypes.join(","),
+            });
+        } else {
+            suggestions.push({
+                comment: opt._source.comment,
+                type: opt._source.type,
+                id: opt._source.id,
+                name: opt._source.fulltitle,
+                entry_seo: opt._source.entry_seo,
+                xrated: opt._source.xrated,
+                machineType: opt._source.machineType,
+            });
+        }
+        if(suggestions.length >= 15) break;
     }
     return suggestions;
 };
@@ -128,7 +160,70 @@ router.get("/typeahead/:context/:query", async (req, res) => {
     });
     const context = req.params.context.trim();
     const query = req.params.query.trim();
+    logEvent(debug, {
+        level: "info",
+        event: "request.start.mtypes.checking",
+        module: moduleId,
+        route: "/typeahead/:context/:query",
+        mtypesInput: req.query.machinetype,
+    });
 
+    if (req.query.machinetype === undefined) {
+        req.query.machinetype = []
+    }
+    var mTypes = [];
+    if (!Array.isArray(req.query.machinetype)) {
+        req.query.machinetype = [req.query.machinetype];
+    }
+
+    for (var i = 0; i < req.query.machinetype.length; i++) {
+        logEvent(debug, {
+            level: "trace",
+            event: "request.expand.machinetype.item",
+            module: moduleId,
+            index: i,
+            value: req.query.machinetype[i],
+        });
+        switch (req.query.machinetype[i]) {
+            case "ZXSPECTRUM":
+                logEvent(debug, {
+                    level: "trace",
+                    event: "request.expand.machinetype.alias",
+                    module: moduleId,
+                    alias: "ZXSPECTRUM",
+                });
+                mTypes = mTypes.concat(ZXSPECTRUM);
+                break;
+            case "ZX81":
+                logEvent(debug, {
+                    level: "trace",
+                    event: "request.expand.machinetype.alias",
+                    module: moduleId,
+                    alias: "ZX81",
+                });
+                mTypes = mTypes.concat(ZX81);
+                break;
+            case "PENTAGON":
+                logEvent(debug, {
+                    level: "trace",
+                    event: "request.expand.machinetype.alias",
+                    module: moduleId,
+                    alias: "PENTAGON",
+                });
+                mTypes = mTypes.concat(PENTAGON);
+                break;
+            default:
+                mTypes.push(req.query.machinetype[i]);
+                break;
+        }
+    }
+    req.query.machinetype = mTypes;
+    logEvent(debug, {
+        level: "trace",
+        event: "request.expand.machinetype.done",
+        module: moduleId,
+        value: mTypes,
+    });
     logEvent(debug, {
         level: "info",
         event: "request.validated.pending",
@@ -137,6 +232,7 @@ router.get("/typeahead/:context/:query", async (req, res) => {
         context,
         queryLen: query.length,
         xrt: req.query.xrt,
+        mTypes: mTypes.join(","),
     });
 
     if (!["ALL", ...validContexts].includes(context)) {
@@ -178,9 +274,9 @@ router.get("/typeahead/:context/:query", async (req, res) => {
         const startedAt = Date.now();
         const result = await getTypeaheadSuggestions(context, query, req.query.xrt);
 
-        const total = result?.hits?.total?.value ?? 0;
+        const payload = prepareSuggestionsResponse(result, mTypes);
+        const total = payload.length ?? 0
         res.header("X-Total-Count", total);
-        const payload = prepareSuggestionsResponse(result);
         logEvent(debug, {
             level: "info",
             event: "request.response.sent",

@@ -21,6 +21,10 @@
             "type": "category"
           },
           {
+            "name": "machineType",
+            "type": "category"
+          },
+          {
             "name": "xrated",
             "type": "category"
           },

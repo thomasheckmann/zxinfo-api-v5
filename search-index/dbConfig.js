@@ -1,10 +1,10 @@
 "use strict";
 
+import mysql from "mysql";
+
 var mariadb_username = "root";
 var mariadb_password = "zxdb";
-var mariadb_dbname = process.env.ZXDB ? process.env.ZXDB: "zxdb";
-
-var mysql = require("mysql");
+var mariadb_dbname = process.env.ZXDB ? process.env.ZXDB : "zxdb";
 
 var pool = mysql.createPool({
   connectionLimit: 150, // current max for mariaDB
@@ -35,7 +35,9 @@ function closeConnection(c) {
   c.end();
 }
 
-module.exports = {
-  getConnection: getConnection,
-  closeConnection: closeConnection,
+export { getConnection, closeConnection };
+
+export default {
+  getConnection,
+  closeConnection,
 };

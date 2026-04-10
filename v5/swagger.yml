@@ -372,6 +372,7 @@ paths:
       summary: "Get typeahead suggestions for a content context"
       description: |
         Return typeahead suggestions for a specific content context or for all contexts.
+        Supports optional machine-type filtering via the machinetype query parameter.
       operationId: "typeahead"
       parameters:
         - name: context
@@ -404,6 +405,7 @@ paths:
             enum:
               - "0"
               - "1"
+        - $ref: '#/components/parameters/MachineType'
       responses:
         200:
           description: OK
