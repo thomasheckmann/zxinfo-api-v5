@@ -5,7 +5,7 @@ Use `elasitvue` to check that the new index with alias `zxinfo-search` has been 
 
 ````
 # PRODUCTION | LOCAL
->cd ~/Public/HETZNER_SITES/NEW_ZXINFO/zxinfo-api-v5/search-index/mappings
+>cd /Volumes/M2_SSD/kolbeck/Public/HETZNER_SITES/ZXINFO/backend/zxinfo-api-v5/search-index/mappings
 >./install-new-suggester.sh --target prod --version 1.0.231 | ./install-new-suggester.sh --target local --version 1.0.231
 ````
 
