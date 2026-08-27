@@ -32,3 +32,9 @@ app.use("/v5", routes);
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
+
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok'
+  });
+});
