@@ -341,6 +341,7 @@ async function index(id, title, entry_seo, comment, context, xrt, mtype) {
   // 44800 **/?** - no words found by regexp => words = null
   const words = title.match(regex) === null ? [] : title.match(regex);
   console.log(`[${zeroFillEntryId(id)}][INDEX][CLEANING] ${title} => [${words}] (${machineType})`);
+  console.error(`[${zeroFillEntryId(id)}][INDEX][CLEANING] ${title} => [${words}] (${machineType})`);
 
   /**
     var pairs = [];
