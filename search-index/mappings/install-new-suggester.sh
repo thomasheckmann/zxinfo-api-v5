@@ -5,6 +5,8 @@ usage()
     echo ""
     echo "usage:"
     echo "    ./install-new-suggester --target [prod|qa|local] --version <zxdb version>"
+    echo ""
+    echo "NOTE: for prod target, ES_URL environment variable must be defined"
     exit 1
 }
 
@@ -64,8 +66,13 @@ set -o pipefail
 
 if [[ $TARGET == "prod" ]];
 then
-    ES_HOST="http://internal.zxinfo.dk"
-    ES_PATH="/e"
+    if [ -z "${ES_URL}" ];
+    then
+        echo "ES_URL not defined"
+        exit
+    fi
+    ES_HOST="${ES_URL}"
+    ES_PATH="/ee"
 else
     ES_HOST="http://localhost:9400"
     ES_PATH=""
