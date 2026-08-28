@@ -28,6 +28,6 @@
   },
   "homepage": "https://github.com/thomasheckmann/zxinfo-api-v5#readme",
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.14"
   }
 }
