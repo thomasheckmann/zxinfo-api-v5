@@ -1,6 +1,6 @@
 {
   "development": {
-    "es_host": "http://localhost:9000",
+    "es_host": "http://elastic:mju76YHNES@127.0.0.1:9200",
     "es_path": "",
     "es_apiVersion": "8.17",
     "es_log": "debug",
