@@ -74,7 +74,7 @@ then
     ES_HOST="${ES_URL}"
     ES_PATH="/ee"
 else
-    ES_HOST="http://localhost:9400"
+    ES_HOST="http://elastic:mju76YHNES@127.0.0.1:9200"
     ES_PATH=""
 fi
 
