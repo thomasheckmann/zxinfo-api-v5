@@ -45,14 +45,14 @@ router.use(function (req, res, next) {
   next(); // make sure we go to the next routes and don't stop here
 });
 
-router.get("/filesearch/*path", filesearch);
-router.get("/filecheck/*path", filecheck);
-router.get("/entries{/*path}", entries);
-router.get("/suggest/*path", suggest);
-router.get("/search{/*path}", search);
-router.get("/typeahead/*path", typeahead);
+router.get("/filesearch/:path", filesearch);
+router.get("/filecheck/:path", filecheck);
+router.get("/entries/:path", entries);
+router.get("/suggest/:path", suggest);
+router.get("/search/:path", search);
+router.get("/typeahead/:path", typeahead);
 
-router.get("/*path", (req, res) => {
+router.get("/:path", (req, res) => {
   logEvent(debug, {
     level: "info",
     event: "request.catchall",
