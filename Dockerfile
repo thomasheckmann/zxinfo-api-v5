@@ -22,5 +22,5 @@ COPY --chown=node:node v5 ./v5
 WORKDIR /app
 USER node
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
-	CMD node -e "const http=require('node:http');const port=process.env.PORT||3000;const req=http.get({host:'127.0.0.1',port,path:'/v5/healthz',timeout:2000},res=>process.exit(res.statusCode<500?0:1));req.on('error',()=>process.exit(1));req.on('timeout',()=>{req.destroy();process.exit(1);});"
+	CMD node -e "const http=require('node:http');const port=process.env.PORT||3000;const req=http.get({host:'127.0.0.1',port,path:'/health',timeout:2000},res=>process.exit(res.statusCode<500?0:1));req.on('error',()=>process.exit(1));req.on('timeout',()=>{req.destroy();process.exit(1);});"
 CMD ["node", "app.js"]

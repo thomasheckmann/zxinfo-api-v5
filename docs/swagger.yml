@@ -3,7 +3,8 @@ info:
   title: ZXInfo API
   version: "5.0.0"
   description: |
-    ZXInfo API v5 endpoints for file search, search, suggestions, and typeahead.
+    ZXInfo API v5 endpoints for ZXDB entries and metadata, search, suggestions, file lookup,
+    typeahead, and ZX80/ZX81 screen conversion.
   contact:
     name: ZXInfo API development
     email: info@zxinfo.dk
@@ -12,7 +13,27 @@ servers:
 tags:
   - name: "zxinfo"
     description: Search, suggestion, typeahead, and file-search endpoints
+  - name: "zx81scr"
+    description: ZX81/ZX80 screen conversion and uploaded-file endpoints
 paths:
+  /metadata:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get available entry filter metadata"
+      description: Returns machine types, genre types, and feature groups from the ZXDB index.
+      operationId: "getMetadata"
+      responses:
+        "200":
+          description: Available metadata values and document counts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataResponse'
+        "404":
+          description: Metadata index not found
+        "500":
+          description: Server error
   /entries/{entryid}:
     get:
       tags:
@@ -28,16 +49,18 @@ paths:
           required: true
           schema:
             type: integer
+            minimum: 0
+            maximum: 9999999
         - $ref: '#/components/parameters/SearchMode'
         - $ref: '#/components/parameters/EntryOutput'
       responses:
-        200:
+        "200":
           description: Entry document
-        400:
+        "400":
           description: Invalid entry ID
-        404:
+        "404":
           description: Entry not found
-        500:
+        "500":
           description: Server error
   /entries/byletter/{letter}:
     get:
@@ -78,12 +101,12 @@ paths:
         - $ref: '#/components/parameters/Group'
         - $ref: '#/components/parameters/GroupName'
       responses:
-        200:
+        "200":
           description: Matching entries
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        500:
+        "500":
           description: Server error
   /entries/morelikethis/{entryid}:
     get:
@@ -108,14 +131,14 @@ paths:
         - $ref: '#/components/parameters/SearchExplain'
         - $ref: '#/components/parameters/IncludeAggregations'
       responses:
-        200:
+        "200":
           description: Similar entries
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        404:
+        "404":
           description: Invalid entry ID
-        500:
+        "500":
           description: Server error
   /entries/byauthor/{name}:
     get:
@@ -152,12 +175,12 @@ paths:
         - $ref: '#/components/parameters/Group'
         - $ref: '#/components/parameters/GroupName'
       responses:
-        200:
+        "200":
           description: Matching entries
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        500:
+        "500":
           description: Server error
   /entries/bypublisher/{name}:
     get:
@@ -196,12 +219,18 @@ paths:
         - $ref: '#/components/parameters/Group'
         - $ref: '#/components/parameters/GroupName'
       responses:
-        200:
+        "200":
           description: Matching entries
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        500:
+        "422":
+          description: Invalid letter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
           description: Server error
   /entries/random/{total}:
     get:
@@ -220,12 +249,12 @@ paths:
         - $ref: '#/components/parameters/SearchMode'
         - $ref: '#/components/parameters/SearchOutput'
       responses:
-        200:
+        "200":
           description: Random entry documents
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        500:
+        "500":
           description: Server error
   /filesearch/{text}:
     get:
@@ -238,28 +267,147 @@ paths:
       parameters:
         - name: text
           in: path
-          description: What to search for
+          description: Text to search for (maximum 200 characters)
           schema:
             type: string
+            maxLength: 200
           required: true
         - $ref: '#/components/parameters/PageOffset'
         - $ref: '#/components/parameters/FileSearchSize'
       responses:
-        200:
-          description: OK
+        "200":
+          description: Matching documents enriched with their ZXDB entry metadata
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        404:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileSearchResponse'
+        "404":
           description: Nothing found
-        422:
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
+        "500":
           description: Server error
+  /filecheck/{hash}:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Find a ZXDB entry by file checksum"
+      description: Accepts an MD5 checksum (32 hexadecimal characters) or SHA-512 checksum (128 hexadecimal characters).
+      operationId: "fileCheck"
+      parameters:
+        - name: hash
+          in: path
+          description: File checksum, case-insensitive hexadecimal
+          required: true
+          schema:
+            type: string
+            pattern: '^\s*(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{128})\s*$'
+      responses:
+        "200":
+          description: Matching ZXDB entry and file records
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/TotalCount'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileCheckResponse'
+        "404":
+          description: No matching entry found
+        "422":
+          description: Invalid checksum
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Server error
+  /scr/upload:
+    post:
+      tags:
+        - "zx81scr"
+      summary: "Convert a ZX80/ZX81 screen or image file"
+      description: Accepts BMP, PNG, GIF, JPG, S81, S80, or SCR files up to 1,000,000 bytes.
+      operationId: "convertScreenUpload"
+      parameters:
+        - name: ox
+          in: query
+          description: Optional horizontal conversion offset
+          required: false
+          schema:
+            type: integer
+        - name: oy
+          in: query
+          description: Optional vertical conversion offset
+          required: false
+          schema:
+            type: integer
+        - name: zx80
+          in: query
+          description: Set to true to select ZX80 conversion for supported image uploads
+          required: false
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Converted file data and generated output descriptors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenConversionResponse'
+        "422":
+          description: Unsupported file type or upload exceeds 1,000,000 bytes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Conversion error
+  /scr/files/{name}:
+    get:
+      tags:
+        - "zx81scr"
+      summary: "Download a generated screen-conversion file"
+      operationId: "downloadScreenFile"
+      parameters:
+        - name: name
+          in: path
+          description: Name of the generated file in the upload directory
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Generated file contents
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: File not found
   /suggest/{query}:
     get:
       tags:
@@ -269,20 +417,25 @@ paths:
       parameters:
         - name: query
           in: path
-          description: Text to suggest from
+          description: Text prefix to suggest from (maximum 100 characters)
           schema:
             type: string
+            maxLength: 100
           required: true
       responses:
-        200:
+        "200":
           description: OK
-        422:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionResponse'
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
+        "500":
           description: Server error
   /suggest/author/{name}:
     get:
@@ -293,20 +446,25 @@ paths:
       parameters:
         - name: name
           in: path
-          description: Author name prefix
+          description: Author name prefix (maximum 100 characters)
           schema:
             type: string
+            maxLength: 100
           required: true
       responses:
-        200:
+        "200":
           description: OK
-        422:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionResponse'
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
+        "500":
           description: Server error
   /suggest/publisher/{name}:
     get:
@@ -317,20 +475,25 @@ paths:
       parameters:
         - name: name
           in: path
-          description: Publisher name prefix
+          description: Publisher name prefix (maximum 100 characters)
           schema:
             type: string
+            maxLength: 100
           required: true
       responses:
-        200:
+        "200":
           description: OK
-        422:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionResponse'
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
+        "500":
           description: Server error
   /typeahead/{context}/{query}:
     get:
@@ -358,32 +521,44 @@ paths:
               - LICENSE
         - name: query
           in: path
-          description: Prefix text to complete
+          description: Prefix text to complete (maximum 100 characters)
           required: true
           schema:
             type: string
+            maxLength: 100
+        - name: machinetype
+          in: query
+          description: Filter suggestions by machine type. Repeat to include multiple types; ZXSPECTRUM, ZX81, and PENTAGON are aliases.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
         - name: xrt
           in: query
-          description: Set to "1" to include x-rated entries
+          description: Set to "1" to include x-rated entries; all other values exclude them
           required: false
           schema:
             type: string
-            enum:
-              - "0"
-              - "1"
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        422:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TypeaheadResponse'
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
+        "500":
           description: Server error
   /search:
     get:
@@ -417,12 +592,12 @@ paths:
         - $ref: '#/components/parameters/Group'
         - $ref: '#/components/parameters/GroupName'
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        500:
+        "500":
           description: Server error
   /search/{searchterm}:
     get:
@@ -460,18 +635,18 @@ paths:
         - $ref: '#/components/parameters/Group'
         - $ref: '#/components/parameters/GroupName'
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        422:
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
+        "500":
           description: Server error
   /search/titles/{searchterm}:
     get:
@@ -509,18 +684,18 @@ paths:
         - $ref: '#/components/parameters/Group'
         - $ref: '#/components/parameters/GroupName'
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        422:
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
+        "500":
           description: Server error
   /search/screens/{searchterm}:
     get:
@@ -558,23 +733,23 @@ paths:
         - $ref: '#/components/parameters/Group'
         - $ref: '#/components/parameters/GroupName'
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        422:
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        500:
+        "500":
           description: Server error
 components:
   headers:
     TotalCount:
-      description: Total number of matching results before pagination
+      description: Total number of matching results, before pagination where applicable
       schema:
         type: integer
   parameters:
@@ -606,7 +781,7 @@ components:
         type: integer
         minimum: 1
         maximum: 100
-        default: 15
+        default: 25
     SearchMode:
       name: mode
       in: query
@@ -630,8 +805,6 @@ components:
         enum:
           - title_asc
           - title_desc
-          - score_asc
-          - score_desc
           - date_asc
           - date_desc
           - rel_asc
@@ -659,7 +832,7 @@ components:
     SearchExplain:
       name: explain
       in: query
-      description: Return the raw Elasticsearch response when provided
+      description: Return the raw Elasticsearch response when provided; this response does not include the X-Total-Count header
       required: false
       schema:
         oneOf:
@@ -839,6 +1012,178 @@ components:
       schema:
         type: string
   schemas:
+    MetadataResponse:
+      type: object
+      properties:
+        machinetypes:
+          $ref: '#/components/schemas/MetadataValues'
+        genretypes:
+          $ref: '#/components/schemas/MetadataValues'
+        features:
+          $ref: '#/components/schemas/FeatureMetadataValues'
+    MetadataValues:
+      type: object
+      properties:
+        parameter:
+          type: string
+        type:
+          type: string
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              doc_count:
+                type: integer
+    FeatureMetadataValues:
+      type: object
+      properties:
+        group:
+          type: string
+        type:
+          type: string
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              groupname:
+                type: string
+              doc_count:
+                type: integer
+    TypeaheadResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          comment:
+            type: string
+          type:
+            type: string
+          id:
+            type: string
+          name:
+            type: string
+          entry_seo:
+            type: string
+          xrated:
+            type: boolean
+          machineType:
+            type: string
+    FileSearchResponse:
+      type: array
+      items:
+        type: object
+        description: Elasticsearch document hit with an added ZXDB entry summary
+        properties:
+          entry:
+            type: object
+            properties:
+              entryId:
+                type: string
+              title:
+                type: string
+              machineType:
+                type: string
+              contenttype:
+                type: string
+              source:
+                type: string
+        additionalProperties: true
+    FileCheckResponse:
+      type: object
+      properties:
+        entry_id:
+          type: string
+        title:
+          type: string
+        zxinfoVersion:
+          type: string
+        contentType:
+          type: string
+        originalYearOfRelease:
+          oneOf:
+            - type: string
+            - type: integer
+        machineType:
+          type: string
+        genre:
+          type: string
+        genreType:
+          type: string
+        genreSubType:
+          type: string
+        publishers:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        file:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    ScreenConversionResponse:
+      type: object
+      properties:
+        output:
+          type: object
+          properties:
+            png:
+              type: object
+              properties:
+                base64:
+                  type: string
+                  description: Base64-encoded PNG image
+                height:
+                  type: integer
+                width:
+                  type: integer
+                filename:
+                  type: string
+            ovr:
+              $ref: '#/components/schemas/GeneratedFile'
+            s81:
+              $ref: '#/components/schemas/GeneratedFile'
+            scr:
+              $ref: '#/components/schemas/GeneratedFile'
+            txt:
+              allOf:
+                - $ref: '#/components/schemas/GeneratedFile'
+                - type: object
+                  properties:
+                    data:
+                      type: string
+            used_offsetx:
+              type: integer
+            used_offsety:
+              type: integer
+        file:
+          type: object
+          description: Uploaded-file metadata from Multer
+          additionalProperties: true
+    GeneratedFile:
+      type: object
+      properties:
+        filename:
+          type: string
+    SuggestionResponse:
+      type: array
+      items:
+        type: object
+        required:
+          - text
+        properties:
+          text:
+            type: string
+          labeltype:
+            type: string
+          type:
+            type: string
+          entry_id:
+            type: string
     ErrorResponse:
       type: object
       required:
