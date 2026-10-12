@@ -3,7 +3,56 @@ info:
   title: ZXInfo API
   version: "5.0.0"
   description: |
-    ZXInfo API v5 endpoints for file search, search, suggestions, and typeahead.
+    **INFO INFO INFO - ZXInfo API v3 will be decomissioned by end of year 2026**
+
+    Welcome to the world's (probaly) greatest Sinclair API!.
+
+    This ZXDB based API is a tool to help developers everywhere create amazing and incredible web sites and apps using data from the 40-plus years area of Sinclair home computers (and clones).
+
+    **Ready** to get started?
+
+    This is the short version of what you need to do:
+    * Be a good API citizen, read and understand how to use the API
+    * **Identify yourself** using your own **User-Agent** string (and don't forget to tell us about it). Otherwise there is a risk that access will be treated as a crawler!
+    * Keep in touch: tell us about what you're building and talk to other developers
+    * Build cool stuff
+
+    The ZXInfo API is also the backend for the web site https://zxinfo.dk
+
+    Remember that the ZXInfo API suite and portal is an evolving project, developed by dedicated people in their spare time. To the extent that it is possible, we will try to limit any modifications which cause backwards incompatible changes to applications.
+
+    Most communication will occur on the community forum on https://spectrumcomputing.co.uk/forums/
+
+    Additional information can be found on the [Wiki](https://github.com/thomasheckmann/zxinfo-api-v3/wiki/ZXInfo-API-v3-documentation)
+
+    **KNOWN CLIENTS using ZXInfo API**
+
+    If you want to check out how the ZXInfo API is being used, please checkout the following:
+
+    * Web site https://zxinfo.dk - a modern full featured web site build using Vue.js and Vuetify.
+    * [SpectrumComputing](https://spectrumcomputing.co.uk) - the largest archive of software (games, electronic press, system programs, pc tools) for the ZX Spectrum.
+    * [Virtual TR-DOS](https://vtrd.in/) - the largest archive of software (games, electronic press, system programs, pc tools) for the ZX Spectrum with TR-DOS.
+    * [ZX-Next-Unite](https://github.com/jclauzel/ZX-Next-Unite) - A cross-platform (Windows, Linux, macOS) graphical front-end that unites two great ZX Spectrum Next tools in a single utility — Hdfm-Gooey and NextSync.
+    * WoSC https://worldofspectrum.net - WoSC (WOS Classic) is the spiritual successor to the legendary World Of Spectrum site.
+    * Android ZX App[Google Play](https://play.google.com/store/apps/details?id=com.bricboys.zxapp) - ZX Spectrum stuff search engine
+    * ZXInfo file browser [GitHub](https://github.com/thomasheckmann/zxinfo-file-browser) - kind of a "Picasa for ZX Spectrum emulator files".
+    * [Tape Loader](https://ejssoft.pt/start.php?funcao=48#tapeloader) - play TAP or TZX back to your computer.
+    * ZX Tape Player App [GitHub](https://github.com/d00rsfan/zx_tape_player) - Cross platform TZX/TAP player for iOS and Android.
+    * Microdrive Emulator [OqtaDrive](https://oqtadrive.org/01.overview/features/) - emulates a bank of 8 Microdrives for use with a Sinclair ZX Spectrum with Interface 1, or with a Sinclair QL.
+    * [Skyscraper](https://gemba.github.io/skyscraper/SCRAPINGMODULES/#zxinfo-formerly-world-of-spectrum) - maintain metadata for your files.
+    * ZX Spectrum Frontend Meta Generator [GitHub](https://github.com/leemm/zxspectrum-meta-generator) - Create your metadata for various emulator frontends.
+    * Virtual Filesystem [ZXDBFS](https://www.hermitretro.com/zxdbfs.html) - a filesystem-like environment enabling you to search and load games seamlessly over the Internet through a standard file interface.
+    * Emulator [ZEsarUX](https://github.com/chernandezba/zesarux) - ZX Second-Emulator And Released for UniX.
+    * SpeccyBot https://github.com/druellan/speccybot - an interactive chat bot for Telegram that allows searching online for Spectrum related information.
+    * ZXInfoTV [AppleTV](https://github.com/thomasheckmann/zxinfo-tv) - PoC for a video focused experiece for your AppleTV. (No longer )
+
+    [**ZXDB update October 2026**](https://zxinfo.dk/whatsnew)
+
+    Latest ZXDB version:
+    * 1.0.241
+    * 1.0.239
+    * 1.0.238
+    
   contact:
     name: ZXInfo API development
     email: info@zxinfo.dk
@@ -12,7 +61,27 @@ servers:
 tags:
   - name: "zxinfo"
     description: Search, suggestion, typeahead, and file-search endpoints
+  - name: "zx81scr"
+    description: ZX81/ZX80 screen conversion and uploaded-file endpoints
 paths:
+  /metadata:
+    get:
+      tags:
+        - "zxinfo"
+      summary: "Get available entry filter metadata"
+      description: Returns available machine types, genre types, and feature groups from the ZXDB index for use as entry-search filters.
+      operationId: "getMetadata"
+      responses:
+        "200":
+          description: Available metadata values and document counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetadataResponse"
+        "404":
+          description: Metadata index not found
+        "500":
+          description: Server error
   /entries/{entryid}:
     get:
       tags:
@@ -28,16 +97,18 @@ paths:
           required: true
           schema:
             type: integer
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/EntryOutput'
+            minimum: 0
+            maximum: 9999999
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/EntryOutput"
       responses:
-        200:
+        "200":
           description: Entry document
-        400:
+        "400":
           description: Invalid entry ID
-        404:
+        "404":
           description: Entry not found
-        500:
+        "500":
           description: Server error
   /entries/byletter/{letter}:
     get:
@@ -46,7 +117,9 @@ paths:
       summary: "Browse entries by first letter"
       description: |
         Returns entries whose title starts with the given letter.
-        Use # to match titles that begin with a digit.
+        Use # to match titles that begin with a digit. The value is case-insensitive.
+
+        For the machinetype filter, use ZXSPECTRUM, ZX81, or PENTAGON to include all variants of those platforms.
       operationId: "entriesByLetter"
       parameters:
         - name: letter
@@ -56,34 +129,40 @@ paths:
           schema:
             type: string
             maxLength: 1
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
-        200:
+        "200":
           description: Matching entries
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        500:
+              $ref: "#/components/headers/TotalCount"
+        "422":
+          description: Invalid letter; expected one letter A-Z or #
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
   /entries/morelikethis/{entryid}:
     get:
@@ -91,7 +170,8 @@ paths:
         - "zxinfo"
       summary: "Get entries similar to a given entry"
       description: |
-        Returns entries with similar genre type, machine type, and content type to the given entry.
+        Returns entries using Elasticsearch's more-like-this query, based on the given entry's
+        machine type, genre type, genre subtype, and content type.
       operationId: "moreLikeThis"
       parameters:
         - name: entryid
@@ -100,28 +180,29 @@ paths:
           required: true
           schema:
             type: integer
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
       responses:
-        200:
+        "200":
           description: Similar entries
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        404:
+              $ref: "#/components/headers/TotalCount"
+        "404":
           description: Invalid entry ID
-        500:
+        "500":
           description: Server error
   /entries/byauthor/{name}:
     get:
       tags:
         - "zxinfo"
       summary: "Get entries by author or group name prefix"
+      description: Matches a prefix against both `authors.name` and `authors.groupName`. Results can also be narrowed with the standard entry filters.
       operationId: "entriesByAuthor"
       parameters:
         - name: name
@@ -130,34 +211,34 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
-        200:
+        "200":
           description: Matching entries
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        500:
+              $ref: "#/components/headers/TotalCount"
+        "500":
           description: Server error
   /entries/bypublisher/{name}:
     get:
@@ -174,40 +255,44 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
-        200:
+        "200":
           description: Matching entries
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        500:
+              $ref: "#/components/headers/TotalCount"
+        "500":
           description: Server error
   /entries/random/{total}:
     get:
       tags:
         - "zxinfo"
       summary: "Get a random selection of software entries with screenshots"
+      description: |
+        Returns random SOFTWARE entries from the Adventure Game, Arcade Game, Casual Game, Game,
+        Sport Game, and Strategy Game genres. Each result has a picture-format loading or running
+        screen.
       operationId: "randomEntries"
       parameters:
         - name: total
@@ -217,15 +302,15 @@ paths:
           schema:
             type: integer
             minimum: 1
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchOutput'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchOutput"
       responses:
-        200:
+        "200":
           description: Random entry documents
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        500:
+              $ref: "#/components/headers/TotalCount"
+        "500":
           description: Server error
   /filesearch/{text}:
     get:
@@ -233,137 +318,248 @@ paths:
         - "zxinfo"
       summary: "Perform search in known .txt and .pdf files"
       description: |
-        Return search results for txt and pdf documents known to ZXDB.
+        Searches indexed text and PDF document contents known to ZXDB. Each result includes a
+        highlighted text match and a summary of the associated ZXDB entry when a file checksum
+        matches an entry.
       operationId: "fileSearch"
       parameters:
         - name: text
           in: path
-          description: What to search for
+          description: Text to search for (maximum 200 characters)
           schema:
             type: string
+            maxLength: 200
           required: true
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/FileSearchSize'
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/FileSearchSize"
       responses:
-        200:
-          description: OK
+        "200":
+          description: Matching documents enriched with their ZXDB entry metadata
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        404:
+              $ref: "#/components/headers/TotalCount"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileSearchResponse"
+        "404":
           description: Nothing found
-        422:
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        500:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
   /filecheck/{hash}:
     get:
       tags:
         - "zxinfo"
-      summary: "Lookup ZXDB entry by file hash"
+      summary: "Find a ZXDB entry by file checksum"
       description: |
-        Lookup a ZXDB entry by MD5 (32-char) or SHA-512 (128-char) file hash.
-        Returns the associated entry along with the matching file hashes.
+        Looks up an entry by its MD5 checksum (32 hexadecimal characters) or SHA-512 checksum
+        (128 hexadecimal characters), and returns the matching entry and file records.
       operationId: "fileCheck"
       parameters:
         - name: hash
           in: path
-          description: File hash (MD5 32-char or SHA-512 128-char hex string)
+          description: File checksum, case-insensitive hexadecimal
+          required: true
           schema:
             type: string
-            pattern: '^[a-fA-F0-9]{32}|[a-fA-F0-9]{128}$'
-          required: true
+            pattern: '^\s*(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{128})\s*$'
       responses:
-        200:
-          description: Entry with matching file hash
+        "200":
+          description: Matching ZXDB entry and file records
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        404:
-          description: No entry found with this hash
-        422:
-          description: Invalid hash format
+              $ref: "#/components/headers/TotalCount"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        500:
+                $ref: "#/components/schemas/FileCheckResponse"
+        "404":
+          description: No matching entry found
+        "422":
+          description: Invalid checksum
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
+  /scr/upload:
+    post:
+      tags:
+        - "zx81scr"
+      summary: "Convert a ZX80/ZX81 screen or image file"
+      description: Accepts BMP, PNG, GIF, JPG, S81, S80, or SCR files up to 1,000,000 bytes.
+      operationId: "convertScreenUpload"
+      parameters:
+        - name: ox
+          in: query
+          description: Optional horizontal conversion offset
+          required: false
+          schema:
+            type: integer
+        - name: oy
+          in: query
+          description: Optional vertical conversion offset
+          required: false
+          schema:
+            type: integer
+        - name: zx80
+          in: query
+          description: Set to true to select ZX80 conversion for supported image uploads
+          required: false
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Converted file data and generated output descriptors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreenConversionResponse"
+        "422":
+          description: Unsupported file type or upload exceeds 1,000,000 bytes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Conversion error
+  /scr/files/{name}:
+    get:
+      tags:
+        - "zx81scr"
+      summary: "Download a generated screen-conversion file"
+      description: Downloads the named file from the API's uploads directory.
+      operationId: "downloadScreenFile"
+      parameters:
+        - name: name
+          in: path
+          description: Name of the generated file in the upload directory
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Generated file contents
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: File not found
   /suggest/{query}:
     get:
       tags:
         - "zxinfo"
       summary: "Get mixed title/author/publisher suggestions"
+      description: |
+        Returns title, author, and publisher completions for a type-as-you-go search field.
+        The trimmed query must contain 1-100 characters.
       operationId: "suggestAll"
       parameters:
         - name: query
           in: path
-          description: Text to suggest from
+          description: Text prefix to suggest from (maximum 100 characters)
           schema:
             type: string
+            maxLength: 100
           required: true
       responses:
-        200:
+        "200":
           description: OK
-        422:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionResponse"
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        500:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
   /suggest/author/{name}:
     get:
       tags:
         - "zxinfo"
       summary: "Get author suggestions"
+      description: Returns author completions for a trimmed name prefix of 1-100 characters.
       operationId: "suggestAuthor"
       parameters:
         - name: name
           in: path
-          description: Author name prefix
+          description: Author name prefix (maximum 100 characters)
           schema:
             type: string
+            maxLength: 100
           required: true
       responses:
-        200:
+        "200":
           description: OK
-        422:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionResponse"
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        500:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
   /suggest/publisher/{name}:
     get:
       tags:
         - "zxinfo"
       summary: "Get publisher suggestions"
+      description: Returns publisher completions for a trimmed name prefix of 1-100 characters.
       operationId: "suggestPublisher"
       parameters:
         - name: name
           in: path
-          description: Publisher name prefix
+          description: Publisher name prefix (maximum 100 characters)
           schema:
             type: string
+            maxLength: 100
           required: true
       responses:
-        200:
+        "200":
           description: OK
-        422:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionResponse"
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        500:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
   /typeahead/{context}/{query}:
     get:
@@ -372,7 +568,6 @@ paths:
       summary: "Get typeahead suggestions for a content context"
       description: |
         Return typeahead suggestions for a specific content context or for all contexts.
-        Supports optional machine-type filtering via the machinetype query parameter.
       operationId: "typeahead"
       parameters:
         - name: context
@@ -392,33 +587,44 @@ paths:
               - LICENSE
         - name: query
           in: path
-          description: Prefix text to complete
+          description: Prefix text to complete (maximum 100 characters)
           required: true
           schema:
             type: string
+            maxLength: 100
+        - name: machinetype
+          in: query
+          description: Filter suggestions by machine type. Repeat to include multiple types; ZXSPECTRUM, ZX81, and PENTAGON are aliases.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
         - name: xrt
           in: query
-          description: Set to "1" to include x-rated entries
+          description: Set to "1" to include x-rated entries; all other values exclude them
           required: false
           schema:
             type: string
-            enum:
-              - "0"
-              - "1"
-        - $ref: '#/components/parameters/MachineType'
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        422:
+              $ref: "#/components/headers/TotalCount"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TypeaheadResponse"
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        500:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
   /search:
     get:
@@ -427,43 +633,53 @@ paths:
       summary: "Browse all entries with optional filters"
       description: |
         Return ZXDB entries using match-all search, with optional filters, sort, pagination,
-        aggregation data, and alternate output modes.
+        aggregation data, and alternate output modes. Special filter values `machinetype=ZXSPECTRUM`,
+        `ZX81`, or `PENTAGON` include all platform variants; `genretype=GAMES` includes all game genres.
+
+        Examples:
+        * Filter to ZX Spectrum software games: `/search?contenttype=SOFTWARE&machinetype=ZXSPECTRUM&genretype=GAMES`
+        * Request the second page of 25 results: `/search?size=25&offset=1`
+        * Return only IDs and titles: `/search?output=simple`
       operationId: "searchAll"
       parameters:
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        500:
+              $ref: "#/components/headers/TotalCount"
+        "500":
           description: Server error
   /search/{searchterm}:
     get:
       tags:
         - "zxinfo"
       summary: "Search across titles, text scans, authors, publishers, and releases"
+      description: |
+        Runs a weighted search across titles, OCR text, release titles, publisher names, author and
+        group names, and remarks. Primary entries are ranked above modifications, compilations, and
+        covertapes. The trimmed search term must contain 1-200 characters.
       operationId: "searchEntries"
       parameters:
         - name: searchterm
@@ -473,46 +689,47 @@ paths:
           schema:
             type: string
             maxLength: 200
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        422:
+              $ref: "#/components/headers/TotalCount"
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        500:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
   /search/titles/{searchterm}:
     get:
       tags:
         - "zxinfo"
       summary: "Search titles only"
+      description: Searches title fields only, including exact, full-text, phrase, title-suggestion, and partial-title matches.
       operationId: "searchTitles"
       parameters:
         - name: searchterm
@@ -522,46 +739,47 @@ paths:
           schema:
             type: string
             maxLength: 200
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        422:
+              $ref: "#/components/headers/TotalCount"
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        500:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
   /search/screens/{searchterm}:
     get:
       tags:
         - "zxinfo"
       summary: "Search OCR and screen text only"
+      description: Searches text extracted from scanned or screen images; the trimmed term must contain 1-200 characters.
       operationId: "searchScreens"
       parameters:
         - name: searchterm
@@ -571,52 +789,52 @@ paths:
           schema:
             type: string
             maxLength: 200
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
-        200:
+        "200":
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
-        422:
+              $ref: "#/components/headers/TotalCount"
+        "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        500:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Server error
 components:
   headers:
     TotalCount:
-      description: Total number of matching results before pagination
+      description: Total number of matching results, before pagination where applicable
       schema:
         type: integer
   parameters:
     PageOffset:
       name: offset
       in: query
-      description: Zero-based page number
+      description: Zero-based page number, not a result index. Use with size to paginate; for example, offset=2 and size=25 starts at result 51. Random results use /entries/random/{total}.
       required: false
       schema:
         type: integer
@@ -625,7 +843,7 @@ components:
     FileSearchSize:
       name: size
       in: query
-      description: Number of file-search results to return per page
+      description: Number of file-search results per page (1-100, default 30). Use offset to select the zero-based page.
       required: false
       schema:
         type: integer
@@ -635,17 +853,20 @@ components:
     SearchSize:
       name: size
       in: query
-      description: Number of search results to return per page
+      description: Number of search results per page (1-100). Defaults to 25; use with offset to paginate.
       required: false
       schema:
         type: integer
         minimum: 1
         maximum: 100
-        default: 15
+        default: 25
     SearchMode:
       name: mode
       in: query
-      description: Response field set
+      description: |
+        Controls how many entry fields are returned. `full` returns all fields, `compact` returns
+        the overview field set, and `tiny` returns a smaller subset. Use output=simple for the
+        separate id/title-only format.
       required: false
       schema:
         type: string
@@ -653,20 +874,17 @@ components:
           - full
           - compact
           - tiny
-          - simple
         default: compact
     SearchSort:
       name: sort
       in: query
-      description: Result ordering
+      description: Sort by title, original release date, or relevance score, ascending or descending.
       required: false
       schema:
         type: string
         enum:
           - title_asc
           - title_desc
-          - score_asc
-          - score_desc
           - date_asc
           - date_desc
           - rel_asc
@@ -675,7 +893,7 @@ components:
     SearchOutput:
       name: output
       in: query
-      description: Alternate response shape
+      description: "`simple` returns an array of id/title objects; `flat` returns flattened key=value text instead of the normal JSON response."
       required: false
       schema:
         type: string
@@ -685,7 +903,7 @@ components:
     EntryOutput:
       name: output
       in: query
-      description: Set to "flat" for key=value text output
+      description: Set to `flat` to return the entry as key=value text instead of JSON.
       required: false
       schema:
         type: string
@@ -694,7 +912,7 @@ components:
     SearchExplain:
       name: explain
       in: query
-      description: Return the raw Elasticsearch response when provided
+      description: Return the raw Elasticsearch response when provided; this response does not include the X-Total-Count header
       required: false
       schema:
         oneOf:
@@ -728,7 +946,7 @@ components:
     MachineType:
       name: machinetype
       in: query
-      description: Filter by machine type
+      description: Filter by machine type. `ZXSPECTRUM`, `ZX81`, and `PENTAGON` expand to all known variants.
       required: false
       schema:
         oneOf:
@@ -739,7 +957,7 @@ components:
     GenreType:
       name: genretype
       in: query
-      description: Filter by genre type
+      description: Filter by genre type. `GAMES` expands to Adventure Game, Arcade Game, Casual Game, Game, Sport Game, and Strategy Game.
       required: false
       schema:
         oneOf:
@@ -874,6 +1092,178 @@ components:
       schema:
         type: string
   schemas:
+    MetadataResponse:
+      type: object
+      properties:
+        machinetypes:
+          $ref: "#/components/schemas/MetadataValues"
+        genretypes:
+          $ref: "#/components/schemas/MetadataValues"
+        features:
+          $ref: "#/components/schemas/FeatureMetadataValues"
+    MetadataValues:
+      type: object
+      properties:
+        parameter:
+          type: string
+        type:
+          type: string
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              doc_count:
+                type: integer
+    FeatureMetadataValues:
+      type: object
+      properties:
+        group:
+          type: string
+        type:
+          type: string
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              groupname:
+                type: string
+              doc_count:
+                type: integer
+    TypeaheadResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          comment:
+            type: string
+          type:
+            type: string
+          id:
+            type: string
+          name:
+            type: string
+          entry_seo:
+            type: string
+          xrated:
+            type: boolean
+          machineType:
+            type: string
+    FileSearchResponse:
+      type: array
+      items:
+        type: object
+        description: Elasticsearch document hit with an added ZXDB entry summary
+        properties:
+          entry:
+            type: object
+            properties:
+              entryId:
+                type: string
+              title:
+                type: string
+              machineType:
+                type: string
+              contenttype:
+                type: string
+              source:
+                type: string
+        additionalProperties: true
+    FileCheckResponse:
+      type: object
+      properties:
+        entry_id:
+          type: string
+        title:
+          type: string
+        zxinfoVersion:
+          type: string
+        contentType:
+          type: string
+        originalYearOfRelease:
+          oneOf:
+            - type: string
+            - type: integer
+        machineType:
+          type: string
+        genre:
+          type: string
+        genreType:
+          type: string
+        genreSubType:
+          type: string
+        publishers:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        file:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    ScreenConversionResponse:
+      type: object
+      properties:
+        output:
+          type: object
+          properties:
+            png:
+              type: object
+              properties:
+                base64:
+                  type: string
+                  description: Base64-encoded PNG image
+                height:
+                  type: integer
+                width:
+                  type: integer
+                filename:
+                  type: string
+            ovr:
+              $ref: "#/components/schemas/GeneratedFile"
+            s81:
+              $ref: "#/components/schemas/GeneratedFile"
+            scr:
+              $ref: "#/components/schemas/GeneratedFile"
+            txt:
+              allOf:
+                - $ref: "#/components/schemas/GeneratedFile"
+                - type: object
+                  properties:
+                    data:
+                      type: string
+            used_offsetx:
+              type: integer
+            used_offsety:
+              type: integer
+        file:
+          type: object
+          description: Uploaded-file metadata from Multer
+          additionalProperties: true
+    GeneratedFile:
+      type: object
+      properties:
+        filename:
+          type: string
+    SuggestionResponse:
+      type: array
+      items:
+        type: object
+        required:
+          - text
+        properties:
+          text:
+            type: string
+          labeltype:
+            type: string
+          type:
+            type: string
+          entry_id:
+            type: string
     ErrorResponse:
       type: object
       required:
