@@ -3,10 +3,56 @@ info:
   title: ZXInfo API
   version: "5.0.0"
   description: |
-    ZXInfo API v5 endpoints for ZXDB entries and metadata, search, suggestions, file lookup,
-    typeahead, and ZX80/ZX81 screen conversion.
+    **INFO INFO INFO - ZXInfo API v3 will be decomissioned by end of year 2026**
 
-    Clients should send a descriptive User-Agent header to identify the application making each request.
+    Welcome to the world's (probaly) greatest Sinclair API!.
+
+    This ZXDB based API is a tool to help developers everywhere create amazing and incredible web sites and apps using data from the 40-plus years area of Sinclair home computers (and clones).
+
+    **Ready** to get started?
+
+    This is the short version of what you need to do:
+    * Be a good API citizen, read and understand how to use the API
+    * **Identify yourself** using your own **User-Agent** string (and don't forget to tell us about it). Otherwise there is a risk that access will be treated as a crawler!
+    * Keep in touch: tell us about what you're building and talk to other developers
+    * Build cool stuff
+
+    The ZXInfo API is also the backend for the web site https://zxinfo.dk
+
+    Remember that the ZXInfo API suite and portal is an evolving project, developed by dedicated people in their spare time. To the extent that it is possible, we will try to limit any modifications which cause backwards incompatible changes to applications.
+
+    Most communication will occur on the community forum on https://spectrumcomputing.co.uk/forums/
+
+    Additional information can be found on the [Wiki](https://github.com/thomasheckmann/zxinfo-api-v3/wiki/ZXInfo-API-v3-documentation)
+
+    **KNOWN CLIENTS using ZXInfo API**
+
+    If you want to check out how the ZXInfo API is being used, please checkout the following:
+
+    * Web site https://zxinfo.dk - a modern full featured web site build using Vue.js and Vuetify.
+    * [SpectrumComputing](https://spectrumcomputing.co.uk) - the largest archive of software (games, electronic press, system programs, pc tools) for the ZX Spectrum.
+    * [Virtual TR-DOS](https://vtrd.in/) - the largest archive of software (games, electronic press, system programs, pc tools) for the ZX Spectrum with TR-DOS.
+    * [ZX-Next-Unite](https://github.com/jclauzel/ZX-Next-Unite) - A cross-platform (Windows, Linux, macOS) graphical front-end that unites two great ZX Spectrum Next tools in a single utility — Hdfm-Gooey and NextSync.
+    * WoSC https://worldofspectrum.net - WoSC (WOS Classic) is the spiritual successor to the legendary World Of Spectrum site.
+    * Android ZX App[Google Play](https://play.google.com/store/apps/details?id=com.bricboys.zxapp) - ZX Spectrum stuff search engine
+    * ZXInfo file browser [GitHub](https://github.com/thomasheckmann/zxinfo-file-browser) - kind of a "Picasa for ZX Spectrum emulator files".
+    * [Tape Loader](https://ejssoft.pt/start.php?funcao=48#tapeloader) - play TAP or TZX back to your computer.
+    * ZX Tape Player App [GitHub](https://github.com/d00rsfan/zx_tape_player) - Cross platform TZX/TAP player for iOS and Android.
+    * Microdrive Emulator [OqtaDrive](https://oqtadrive.org/01.overview/features/) - emulates a bank of 8 Microdrives for use with a Sinclair ZX Spectrum with Interface 1, or with a Sinclair QL.
+    * [Skyscraper](https://gemba.github.io/skyscraper/SCRAPINGMODULES/#zxinfo-formerly-world-of-spectrum) - maintain metadata for your files.
+    * ZX Spectrum Frontend Meta Generator [GitHub](https://github.com/leemm/zxspectrum-meta-generator) - Create your metadata for various emulator frontends.
+    * Virtual Filesystem [ZXDBFS](https://www.hermitretro.com/zxdbfs.html) - a filesystem-like environment enabling you to search and load games seamlessly over the Internet through a standard file interface.
+    * Emulator [ZEsarUX](https://github.com/chernandezba/zesarux) - ZX Second-Emulator And Released for UniX.
+    * SpeccyBot https://github.com/druellan/speccybot - an interactive chat bot for Telegram that allows searching online for Spectrum related information.
+    * ZXInfoTV [AppleTV](https://github.com/thomasheckmann/zxinfo-tv) - PoC for a video focused experiece for your AppleTV. (No longer )
+
+    [**ZXDB update October 2026**](https://zxinfo.dk/whatsnew)
+
+    Latest ZXDB version:
+    * 1.0.241
+    * 1.0.239
+    * 1.0.238
+    
   contact:
     name: ZXInfo API development
     email: info@zxinfo.dk
@@ -31,7 +77,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MetadataResponse'
+                $ref: "#/components/schemas/MetadataResponse"
         "404":
           description: Metadata index not found
         "500":
@@ -53,8 +99,8 @@ paths:
             type: integer
             minimum: 0
             maximum: 9999999
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/EntryOutput'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/EntryOutput"
       responses:
         "200":
           description: Entry document
@@ -83,39 +129,39 @@ paths:
           schema:
             type: string
             maxLength: 1
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
         "200":
           description: Matching entries
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
         "422":
           description: Invalid letter; expected one letter A-Z or #
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
   /entries/morelikethis/{entryid}:
@@ -134,19 +180,19 @@ paths:
           required: true
           schema:
             type: integer
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
       responses:
         "200":
           description: Similar entries
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
         "404":
           description: Invalid entry ID
         "500":
@@ -165,33 +211,33 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
         "200":
           description: Matching entries
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
         "500":
           description: Server error
   /entries/bypublisher/{name}:
@@ -209,33 +255,33 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
         "200":
           description: Matching entries
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
         "500":
           description: Server error
   /entries/random/{total}:
@@ -256,14 +302,14 @@ paths:
           schema:
             type: integer
             minimum: 1
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchOutput'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchOutput"
       responses:
         "200":
           description: Random entry documents
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
         "500":
           description: Server error
   /filesearch/{text}:
@@ -284,18 +330,18 @@ paths:
             type: string
             maxLength: 200
           required: true
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/FileSearchSize'
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/FileSearchSize"
       responses:
         "200":
           description: Matching documents enriched with their ZXDB entry metadata
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileSearchResponse'
+                $ref: "#/components/schemas/FileSearchResponse"
         "404":
           description: Nothing found
         "422":
@@ -303,7 +349,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
   /filecheck/{hash}:
@@ -328,11 +374,11 @@ paths:
           description: Matching ZXDB entry and file records
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileCheckResponse'
+                $ref: "#/components/schemas/FileCheckResponse"
         "404":
           description: No matching entry found
         "422":
@@ -340,7 +386,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
   /scr/upload:
@@ -390,13 +436,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ScreenConversionResponse'
+                $ref: "#/components/schemas/ScreenConversionResponse"
         "422":
           description: Unsupported file type or upload exceeds 1,000,000 bytes
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Conversion error
   /scr/files/{name}:
@@ -446,13 +492,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuggestionResponse'
+                $ref: "#/components/schemas/SuggestionResponse"
         "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
   /suggest/author/{name}:
@@ -476,13 +522,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuggestionResponse'
+                $ref: "#/components/schemas/SuggestionResponse"
         "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
   /suggest/publisher/{name}:
@@ -506,13 +552,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuggestionResponse'
+                $ref: "#/components/schemas/SuggestionResponse"
         "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
   /typeahead/{context}/{query}:
@@ -567,17 +613,17 @@ paths:
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TypeaheadResponse'
+                $ref: "#/components/schemas/TypeaheadResponse"
         "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
   /search:
@@ -596,33 +642,33 @@ paths:
         * Return only IDs and titles: `/search?output=simple`
       operationId: "searchAll"
       parameters:
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
         "200":
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
         "500":
           description: Server error
   /search/{searchterm}:
@@ -643,39 +689,39 @@ paths:
           schema:
             type: string
             maxLength: 200
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
         "200":
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
         "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
   /search/titles/{searchterm}:
@@ -693,39 +739,39 @@ paths:
           schema:
             type: string
             maxLength: 200
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
         "200":
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
         "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
   /search/screens/{searchterm}:
@@ -743,39 +789,39 @@ paths:
           schema:
             type: string
             maxLength: 200
-        - $ref: '#/components/parameters/SearchMode'
-        - $ref: '#/components/parameters/SearchSize'
-        - $ref: '#/components/parameters/PageOffset'
-        - $ref: '#/components/parameters/SearchSort'
-        - $ref: '#/components/parameters/SearchOutput'
-        - $ref: '#/components/parameters/SearchExplain'
-        - $ref: '#/components/parameters/IncludeAggregations'
-        - $ref: '#/components/parameters/ContentType'
-        - $ref: '#/components/parameters/MachineType'
-        - $ref: '#/components/parameters/GenreType'
-        - $ref: '#/components/parameters/GenreSubType'
-        - $ref: '#/components/parameters/Control'
-        - $ref: '#/components/parameters/MultiplayerMode'
-        - $ref: '#/components/parameters/MultiplayerType'
-        - $ref: '#/components/parameters/XRated'
-        - $ref: '#/components/parameters/Availability'
-        - $ref: '#/components/parameters/Language'
-        - $ref: '#/components/parameters/Year'
-        - $ref: '#/components/parameters/TosecType'
-        - $ref: '#/components/parameters/Group'
-        - $ref: '#/components/parameters/GroupName'
+        - $ref: "#/components/parameters/SearchMode"
+        - $ref: "#/components/parameters/SearchSize"
+        - $ref: "#/components/parameters/PageOffset"
+        - $ref: "#/components/parameters/SearchSort"
+        - $ref: "#/components/parameters/SearchOutput"
+        - $ref: "#/components/parameters/SearchExplain"
+        - $ref: "#/components/parameters/IncludeAggregations"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/MachineType"
+        - $ref: "#/components/parameters/GenreType"
+        - $ref: "#/components/parameters/GenreSubType"
+        - $ref: "#/components/parameters/Control"
+        - $ref: "#/components/parameters/MultiplayerMode"
+        - $ref: "#/components/parameters/MultiplayerType"
+        - $ref: "#/components/parameters/XRated"
+        - $ref: "#/components/parameters/Availability"
+        - $ref: "#/components/parameters/Language"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/TosecType"
+        - $ref: "#/components/parameters/Group"
+        - $ref: "#/components/parameters/GroupName"
       responses:
         "200":
           description: OK
           headers:
             X-Total-Count:
-              $ref: '#/components/headers/TotalCount'
+              $ref: "#/components/headers/TotalCount"
         "422":
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
 components:
@@ -847,7 +893,7 @@ components:
     SearchOutput:
       name: output
       in: query
-      description: '`simple` returns an array of id/title objects; `flat` returns flattened key=value text instead of the normal JSON response.'
+      description: "`simple` returns an array of id/title objects; `flat` returns flattened key=value text instead of the normal JSON response."
       required: false
       schema:
         type: string
@@ -1050,11 +1096,11 @@ components:
       type: object
       properties:
         machinetypes:
-          $ref: '#/components/schemas/MetadataValues'
+          $ref: "#/components/schemas/MetadataValues"
         genretypes:
-          $ref: '#/components/schemas/MetadataValues'
+          $ref: "#/components/schemas/MetadataValues"
         features:
-          $ref: '#/components/schemas/FeatureMetadataValues'
+          $ref: "#/components/schemas/FeatureMetadataValues"
     MetadataValues:
       type: object
       properties:
@@ -1178,14 +1224,14 @@ components:
                 filename:
                   type: string
             ovr:
-              $ref: '#/components/schemas/GeneratedFile'
+              $ref: "#/components/schemas/GeneratedFile"
             s81:
-              $ref: '#/components/schemas/GeneratedFile'
+              $ref: "#/components/schemas/GeneratedFile"
             scr:
-              $ref: '#/components/schemas/GeneratedFile'
+              $ref: "#/components/schemas/GeneratedFile"
             txt:
               allOf:
-                - $ref: '#/components/schemas/GeneratedFile'
+                - $ref: "#/components/schemas/GeneratedFile"
                 - type: object
                   properties:
                     data:
