@@ -5,6 +5,8 @@ info:
   description: |
     ZXInfo API v5 endpoints for ZXDB entries and metadata, search, suggestions, file lookup,
     typeahead, and ZX80/ZX81 screen conversion.
+
+    Clients should send a descriptive User-Agent header to identify the application making each request.
   contact:
     name: ZXInfo API development
     email: info@zxinfo.dk
@@ -21,7 +23,7 @@ paths:
       tags:
         - "zxinfo"
       summary: "Get available entry filter metadata"
-      description: Returns machine types, genre types, and feature groups from the ZXDB index.
+      description: Returns available machine types, genre types, and feature groups from the ZXDB index for use as entry-search filters.
       operationId: "getMetadata"
       responses:
         "200":
@@ -69,7 +71,9 @@ paths:
       summary: "Browse entries by first letter"
       description: |
         Returns entries whose title starts with the given letter.
-        Use # to match titles that begin with a digit.
+        Use # to match titles that begin with a digit. The value is case-insensitive.
+
+        For the machinetype filter, use ZXSPECTRUM, ZX81, or PENTAGON to include all variants of those platforms.
       operationId: "entriesByLetter"
       parameters:
         - name: letter
@@ -106,6 +110,12 @@ paths:
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
+        "422":
+          description: Invalid letter; expected one letter A-Z or #
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         "500":
           description: Server error
   /entries/morelikethis/{entryid}:
@@ -114,7 +124,8 @@ paths:
         - "zxinfo"
       summary: "Get entries similar to a given entry"
       description: |
-        Returns entries with similar genre type, machine type, and content type to the given entry.
+        Returns entries using Elasticsearch's more-like-this query, based on the given entry's
+        machine type, genre type, genre subtype, and content type.
       operationId: "moreLikeThis"
       parameters:
         - name: entryid
@@ -145,6 +156,7 @@ paths:
       tags:
         - "zxinfo"
       summary: "Get entries by author or group name prefix"
+      description: Matches a prefix against both `authors.name` and `authors.groupName`. Results can also be narrowed with the standard entry filters.
       operationId: "entriesByAuthor"
       parameters:
         - name: name
@@ -224,12 +236,6 @@ paths:
           headers:
             X-Total-Count:
               $ref: '#/components/headers/TotalCount'
-        "422":
-          description: Invalid letter
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         "500":
           description: Server error
   /entries/random/{total}:
@@ -237,6 +243,10 @@ paths:
       tags:
         - "zxinfo"
       summary: "Get a random selection of software entries with screenshots"
+      description: |
+        Returns random SOFTWARE entries from the Adventure Game, Arcade Game, Casual Game, Game,
+        Sport Game, and Strategy Game genres. Each result has a picture-format loading or running
+        screen.
       operationId: "randomEntries"
       parameters:
         - name: total
@@ -262,7 +272,9 @@ paths:
         - "zxinfo"
       summary: "Perform search in known .txt and .pdf files"
       description: |
-        Return search results for txt and pdf documents known to ZXDB.
+        Searches indexed text and PDF document contents known to ZXDB. Each result includes a
+        highlighted text match and a summary of the associated ZXDB entry when a file checksum
+        matches an entry.
       operationId: "fileSearch"
       parameters:
         - name: text
@@ -299,7 +311,9 @@ paths:
       tags:
         - "zxinfo"
       summary: "Find a ZXDB entry by file checksum"
-      description: Accepts an MD5 checksum (32 hexadecimal characters) or SHA-512 checksum (128 hexadecimal characters).
+      description: |
+        Looks up an entry by its MD5 checksum (32 hexadecimal characters) or SHA-512 checksum
+        (128 hexadecimal characters), and returns the matching entry and file records.
       operationId: "fileCheck"
       parameters:
         - name: hash
@@ -390,6 +404,7 @@ paths:
       tags:
         - "zx81scr"
       summary: "Download a generated screen-conversion file"
+      description: Downloads the named file from the API's uploads directory.
       operationId: "downloadScreenFile"
       parameters:
         - name: name
@@ -413,6 +428,9 @@ paths:
       tags:
         - "zxinfo"
       summary: "Get mixed title/author/publisher suggestions"
+      description: |
+        Returns title, author, and publisher completions for a type-as-you-go search field.
+        The trimmed query must contain 1-100 characters.
       operationId: "suggestAll"
       parameters:
         - name: query
@@ -442,6 +460,7 @@ paths:
       tags:
         - "zxinfo"
       summary: "Get author suggestions"
+      description: Returns author completions for a trimmed name prefix of 1-100 characters.
       operationId: "suggestAuthor"
       parameters:
         - name: name
@@ -471,6 +490,7 @@ paths:
       tags:
         - "zxinfo"
       summary: "Get publisher suggestions"
+      description: Returns publisher completions for a trimmed name prefix of 1-100 characters.
       operationId: "suggestPublisher"
       parameters:
         - name: name
@@ -567,7 +587,13 @@ paths:
       summary: "Browse all entries with optional filters"
       description: |
         Return ZXDB entries using match-all search, with optional filters, sort, pagination,
-        aggregation data, and alternate output modes.
+        aggregation data, and alternate output modes. Special filter values `machinetype=ZXSPECTRUM`,
+        `ZX81`, or `PENTAGON` include all platform variants; `genretype=GAMES` includes all game genres.
+
+        Examples:
+        * Filter to ZX Spectrum software games: `/search?contenttype=SOFTWARE&machinetype=ZXSPECTRUM&genretype=GAMES`
+        * Request the second page of 25 results: `/search?size=25&offset=1`
+        * Return only IDs and titles: `/search?output=simple`
       operationId: "searchAll"
       parameters:
         - $ref: '#/components/parameters/SearchMode'
@@ -604,6 +630,10 @@ paths:
       tags:
         - "zxinfo"
       summary: "Search across titles, text scans, authors, publishers, and releases"
+      description: |
+        Runs a weighted search across titles, OCR text, release titles, publisher names, author and
+        group names, and remarks. Primary entries are ranked above modifications, compilations, and
+        covertapes. The trimmed search term must contain 1-200 characters.
       operationId: "searchEntries"
       parameters:
         - name: searchterm
@@ -653,6 +683,7 @@ paths:
       tags:
         - "zxinfo"
       summary: "Search titles only"
+      description: Searches title fields only, including exact, full-text, phrase, title-suggestion, and partial-title matches.
       operationId: "searchTitles"
       parameters:
         - name: searchterm
@@ -702,6 +733,7 @@ paths:
       tags:
         - "zxinfo"
       summary: "Search OCR and screen text only"
+      description: Searches text extracted from scanned or screen images; the trimmed term must contain 1-200 characters.
       operationId: "searchScreens"
       parameters:
         - name: searchterm
@@ -756,7 +788,7 @@ components:
     PageOffset:
       name: offset
       in: query
-      description: Zero-based page number
+      description: Zero-based page number, not a result index. Use with size to paginate; for example, offset=2 and size=25 starts at result 51. Random results use /entries/random/{total}.
       required: false
       schema:
         type: integer
@@ -765,7 +797,7 @@ components:
     FileSearchSize:
       name: size
       in: query
-      description: Number of file-search results to return per page
+      description: Number of file-search results per page (1-100, default 30). Use offset to select the zero-based page.
       required: false
       schema:
         type: integer
@@ -775,7 +807,7 @@ components:
     SearchSize:
       name: size
       in: query
-      description: Number of search results to return per page
+      description: Number of search results per page (1-100). Defaults to 25; use with offset to paginate.
       required: false
       schema:
         type: integer
@@ -785,7 +817,10 @@ components:
     SearchMode:
       name: mode
       in: query
-      description: Response field set
+      description: |
+        Controls how many entry fields are returned. `full` returns all fields, `compact` returns
+        the overview field set, and `tiny` returns a smaller subset. Use output=simple for the
+        separate id/title-only format.
       required: false
       schema:
         type: string
@@ -793,12 +828,11 @@ components:
           - full
           - compact
           - tiny
-          - simple
         default: compact
     SearchSort:
       name: sort
       in: query
-      description: Result ordering
+      description: Sort by title, original release date, or relevance score, ascending or descending.
       required: false
       schema:
         type: string
@@ -813,7 +847,7 @@ components:
     SearchOutput:
       name: output
       in: query
-      description: Alternate response shape
+      description: '`simple` returns an array of id/title objects; `flat` returns flattened key=value text instead of the normal JSON response.'
       required: false
       schema:
         type: string
@@ -823,7 +857,7 @@ components:
     EntryOutput:
       name: output
       in: query
-      description: Set to "flat" for key=value text output
+      description: Set to `flat` to return the entry as key=value text instead of JSON.
       required: false
       schema:
         type: string
@@ -866,7 +900,7 @@ components:
     MachineType:
       name: machinetype
       in: query
-      description: Filter by machine type
+      description: Filter by machine type. `ZXSPECTRUM`, `ZX81`, and `PENTAGON` expand to all known variants.
       required: false
       schema:
         oneOf:
@@ -877,7 +911,7 @@ components:
     GenreType:
       name: genretype
       in: query
-      description: Filter by genre type
+      description: Filter by genre type. `GAMES` expands to Adventure Game, Arcade Game, Casual Game, Game, Sport Game, and Strategy Game.
       required: false
       schema:
         oneOf:
