@@ -18,12 +18,14 @@ const logEvent = (logger, fields) => {
   logger(message);
 };
 
+import metadata from "./metadata/metadata.js";
 import filesearch from "./filesearch/filesearch.js";
 import entries from "./entries/entries.js";
 import filecheck from "./filecheck/filecheck.js";
 import search from "./search/search.js";
 import suggest from "./suggest/suggest.js";
 import typeahead from "./typeahead/typeahead.js";
+import zx81scr from "./zx81scr/zx81scr.js";
 
 /************************************************
  *
@@ -31,6 +33,7 @@ import typeahead from "./typeahead/typeahead.js";
  *
  ************************************************/
 router.use(function (req, res, next) {
+  console.log(`[routes] ${req.method} ${req.originalUrl}`);
   logEvent(debug, {
     level: "info",
     event: "request.start",
@@ -45,12 +48,14 @@ router.use(function (req, res, next) {
   next(); // make sure we go to the next routes and don't stop here
 });
 
+router.get("/metadata", metadata);
 router.get("/filesearch/:path", filesearch);
 router.get("/filecheck/:path", filecheck);
-router.get("/entries/:path", entries);
-router.get("/suggest/:path", suggest);
-router.get("/search/:path", search);
+router.get("/entries/*", entries);
+router.get("/suggest/*", suggest);
+router.get("/search/*", search);
 router.get("/typeahead/:path", typeahead);
+router.use("/scr", zx81scr);
 
 router.get("/:path", (req, res) => {
   logEvent(debug, {

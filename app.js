@@ -26,6 +26,11 @@ console.log(JSON.stringify(appConfig[process.env.NODE_ENV], null, 2));
 console.log("###############################################################");
 console.log("#");
 
+app.use((req, res, next) => {
+  console.log(`[app] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // Use the router for all paths starting with '/'
 app.use("/v5", routes);
 

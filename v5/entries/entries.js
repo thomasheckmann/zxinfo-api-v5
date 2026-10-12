@@ -84,6 +84,7 @@ const getEntryById = (entryid, outputmode) => {
 };
 
 router.use((req, res, next) => {
+  console.log(`[entries] ${req.method} ${req.originalUrl}`);
   logEvent(debug, {
     level: "info",
     event: "module.middleware",

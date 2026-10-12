@@ -11,14 +11,6 @@ RUN apk add --no-cache --virtual .build-deps g++ gcc libstdc++ linux-headers mak
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-
-FROM ${NODE_IMAGE} AS import-deps
-WORKDIR /es-import
-
-COPY es-import/package.json es-import/package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
-
-
 FROM ${NODE_IMAGE}
 WORKDIR /app
 
@@ -26,17 +18,6 @@ COPY --from=app-deps /app/node_modules ./node_modules
 COPY --chown=node:node package.json ./
 COPY --chown=node:node app.js ./
 COPY --chown=node:node v5 ./v5
-
-WORKDIR /es-import
-COPY --from=import-deps /es-import/node_modules ./node_modules
-COPY es-import/*.txt ./
-COPY es-import/package.json ./
-COPY es-import/import_zxinfo.sh ./
-COPY es-import/import_magazines.sh ./
-COPY es-import/import_search.sh ./
-RUN sed -i 's/localhost/zxinfo-es-v8/g' import_zxinfo.sh \
- && sed -i 's/localhost/zxinfo-es-v8/g' import_magazines.sh \
- && sed -i 's/localhost/zxinfo-es-v8/g' import_search.sh
 
 WORKDIR /app
 USER node

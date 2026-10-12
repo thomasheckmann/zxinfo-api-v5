@@ -5,6 +5,14 @@ const config = require("../config.json")[process.env.NODE_ENV || "development"];
 import { Client } from "@elastic/elasticsearch";
 import { Transport } from "@elastic/transport";
 let baseUrl = config.es_host ? config.es_host : "http://localhost:9200";
+if (!process.env.ELASTIC_PASSWORD) {
+  throw new Error("ELASTIC_PASSWORD must be set");
+}
+const authenticatedUrl = new URL(baseUrl);
+authenticatedUrl.username = "elastic";
+authenticatedUrl.password = encodeURIComponent(process.env.ELASTIC_PASSWORD);
+baseUrl = authenticatedUrl.href;
+
 let path = config.es_path ? config.es_path : "";
 
 // then create a class, that extends Transport class to modify the path

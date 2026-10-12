@@ -2,8 +2,11 @@
   "dependencies": {
     "@elastic/elasticsearch": "^8.17.0",
     "deasync": "^0.1.30",
+    "debug": "^4.4.3",
     "express": "^4.21.2",
     "flat": "^5.0.2",
+    "jimp": "^1.6.1",
+    "multer": "^2.4.0",
     "mysql": "^2.18.1"
   },
   "name": "zxinfo-api-v5",
