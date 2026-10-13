@@ -9,6 +9,7 @@ const port = process.env.PORT || 3000;
 
 // Import the router
 import routes from "./v5/routes.js";
+import social from "./v5/social/social.js";
 const appConfig = require("./v5/config.json");
 
 if (process.env.NODE_ENV === undefined) {
@@ -33,6 +34,7 @@ app.use((req, res, next) => {
 
 // Use the router for all paths starting with '/'
 app.use("/v5", routes);
+app.use("/social", social);
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

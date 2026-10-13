@@ -26,6 +26,7 @@ import search from "./search/search.js";
 import suggest from "./suggest/suggest.js";
 import typeahead from "./typeahead/typeahead.js";
 import zx81scr from "./zx81scr/zx81scr.js";
+import social from "./social/social.js";
 
 /************************************************
  *
@@ -56,6 +57,7 @@ router.get("/suggest/*", suggest);
 router.get("/search/*", search);
 router.get("/typeahead/:path", typeahead);
 router.use("/scr", zx81scr);
+router.use("/social", social);
 
 router.get("/:path", (req, res) => {
   logEvent(debug, {
