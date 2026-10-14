@@ -8,13 +8,13 @@
                 set $social 1;
         }
 
-		# media files excluded
+    # media files excluded
         if ($request_uri ~ "media") {
                 set $social 0;
         }
         if ($social = 1) {
                 rewrite ^/(.*)$ /social/$1 break;
-		}
+    }
  * 
  */
 
@@ -370,10 +370,34 @@ router.get("/search/:query", (req, res) => {
   res.send(html);
 });
 
-router.get("/publisher/:name", (req, res) => {
+router.get("/publisher/:name", async (req, res) => {
   debug(`social.js /publisher/ - ${req.params.name}]`);
 
-  const description = "Publisher: " + req.params.name;
+  let description = "Publisher: " + req.params.name;
+  try {
+    const endpoint = `/v5/entries/bypublisher/${encodeURIComponent(req.params.name)}?mode=tiny&size=0&offset=0&titlesonly=false`;
+    const apiUrl = new URL(endpoint, `http://127.0.0.1:${process.env.PORT || 3000}`);
+    const response = await fetch(apiUrl, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!response.ok) {
+      throw new Error(`Title count request returned ${response.status}`);
+    }
+    const total = response.headers.get("x-total-count");
+    if (total === null || !/^\d+$/.test(total)) {
+      throw new Error("Title count response has no valid X-Total-Count header");
+    }
+    description += ` - ${total} titles found`;
+  } catch (err) {
+    logEvent(debugError, {
+      level: "error",
+      event: "publisher.count.failed",
+      module: moduleId,
+      publisher: req.params.name,
+      errType: err.name,
+      errMessage: err.message,
+    });
+  }
   const html = getHTML(
     "ZXInfo",
     "The open source ZXDB frontend",
@@ -388,10 +412,34 @@ router.get("/publisher/:name", (req, res) => {
   res.send(html);
 });
 
-router.get("/author/:name", (req, res) => {
-  debug(`social.js /publisher/ - ${req.params.name}]`);
+router.get("/author/:name", async (req, res) => {
+  debug(`social.js /author/ - ${req.params.name}]`);
 
-  const description = "Author: " + req.params.name;
+  let description = "Author: " + req.params.name;
+  try {
+    const endpoint = `/v5/entries/byauthor/${encodeURIComponent(req.params.name)}?mode=tiny&includeagg=true&size=21&offset=0&titlesonly=false`;
+    const apiUrl = new URL(endpoint, `http://127.0.0.1:${process.env.PORT || 3000}`);
+    const response = await fetch(apiUrl, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!response.ok) {
+      throw new Error(`Title count request returned ${response.status}`);
+    }
+    const total = response.headers.get("x-total-count");
+    if (total === null || !/^\d+$/.test(total)) {
+      throw new Error("Title count response has no valid X-Total-Count header");
+    }
+    description += ` - ${total} titles found`;
+  } catch (err) {
+    logEvent(debugError, {
+      level: "error",
+      event: "author.count.failed",
+      module: moduleId,
+      author: req.params.name,
+      errType: err.name,
+      errMessage: err.message,
+    });
+  }
   const html = getHTML(
     "ZXInfo",
     "The open source ZXDB frontend",
@@ -406,10 +454,36 @@ router.get("/author/:name", (req, res) => {
   res.send(html);
 });
 
-router.get("/letter/:letter", (req, res) => {
+router.get("/letter/:letter", async (req, res) => {
   debug(`social.js /letter/ - ${req.params.letter}]`);
 
-  const description = "Games starting with letter: " + req.params.letter;
+  let description = "Games starting with " + (req.params.letter === '#' ? "number" : " letter: " + req.params.letter);
+  try {
+    const endpoint = `/v5/entries/byletter/${encodeURIComponent(req.params.letter)}?mode=tiny&size=0&offset=0`;
+    const apiUrl = new URL(endpoint, `http://127.0.0.1:${process.env.PORT || 3000}`);
+
+    const response = await fetch(apiUrl, {
+      signal: AbortSignal.timeout(3000),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Title count request returned ${response.status}`);
+    }
+    const total = response.headers.get("x-total-count");
+    if (total === null || !/^\d+$/.test(total)) {
+      throw new Error("Title count response has no valid X-Total-Count header");
+    }
+    description += ` - ${total} titles found`;
+  } catch (err) {
+    logEvent(debugError, {
+      level: "error",
+      event: "letter.count.failed",
+      module: moduleId,
+      letter: req.params.letter,
+      errType: err.name,
+      errMessage: err.message,
+    });
+  }
   const html = getHTML(
     "ZXInfo",
     "The open source ZXDB frontend",
