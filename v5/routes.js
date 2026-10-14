@@ -56,7 +56,7 @@ router.get("/filecheck/:path", filecheck);
 router.get("/entries/*", entries);
 router.get("/suggest/*", suggest);
 router.get("/search/*", search);
-router.get("/typeahead/:path", typeahead);
+router.get("/typeahead/*", typeahead);
 router.use("/scr", zx81scr);
 router.use("/social", social);
 router.use("/magazines", magazines);

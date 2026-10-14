@@ -144,7 +144,7 @@ const prepareSuggestionsResponse = (result, mTypes) => {
                 machineType: opt._source.machineType,
             });
         }
-        if(suggestions.length >= 15) break;
+        if (suggestions.length >= 15) break;
     }
     return suggestions;
 };
@@ -303,6 +303,7 @@ router.get("/typeahead/:context/:query", async (req, res) => {
 });
 
 router.use((req, res, next) => {
+    console.log(`[typeahead] ${req.method} ${req.originalUrl}`);
     logEvent(debug, {
         level: "info",
         event: "module.middleware",
